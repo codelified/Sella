@@ -2,3 +2,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+# Secrets, local databases, uploads — never commit these.
+.env
+.env.*
+*.db
+*.db-shm
+*.db-wal
+uploads/
