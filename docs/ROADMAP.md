@@ -138,5 +138,5 @@ alternatives. Each phase ships independently and stays shippable.
 
 ## Explicitly out of scope
 
-Marketplace payouts, multi-vendor, dropshipping. (DashCommerce owns that niche;
-we own the single-merchant experience.)
+Marketplace payouts, multi-vendor, dropshipping — out of scope; Sella
+owns the single-merchant experience.

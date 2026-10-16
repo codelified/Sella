@@ -6,14 +6,14 @@ products stay CMS content, while orders, coupons, reviews, customers, and
 inventory live in atomic plugin storage with a React admin, Stripe checkout,
 and agent-native MCP tools. MIT licensed, zero platform fee.
 
-> **Status: Phase 1 (skeleton).** The plugin loads, exposes settings + storage +
-> a status route. The full storefront flow currently lives in the reference
-> template and migrates inward phase by phase. See `docs/ROADMAP.md`.
+> **Status: Phases 1–9 complete and verified live** — adapters (Stripe,
+> PayPal, PayMongo, manual), atomic inventory, coupons engine, reviews,
+> customers, emails, React admin, storefront theme, one-command scaffolder.
+> See `docs/ROADMAP.md`.
 
-## Why another commerce plugin?
+## Why Sella?
 
-[DashCommerce](https://dashcommerce.dev) proved the demand. Sella
-is an independent take with a different architecture:
+Sella is an independent take on EmDash commerce with a different architecture:
 
 - **EmDash-native data split** — products are CMS collections (visual editing,
   SEO, revisions); transactional records are plugin storage with atomic guards.
@@ -23,8 +23,6 @@ is an independent take with a different architecture:
   oversell races, no double-redeemed codes.
 - **Secrets belong in admin** — Stripe keys are encrypted plugin settings, not
   `.env` entries.
-- **Agent-native** — MCP tools for catalog, orders, and coupons from day one,
-  so Claude/Cursor/OpenCode can operate the store with scoped permissions.
 - **Merchant-owned everything** — MIT, your data in your database, no lock-in.
 
 ## Monorepo

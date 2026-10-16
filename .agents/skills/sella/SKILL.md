@@ -8,7 +8,7 @@ description: Build the Sella EmDash plugin (Shopify-like commerce for EmDash CMS
 A native EmDash plugin (`@sella/core`) that turns any Astro + EmDash
 site into a full store: products (CMS), orders/coupons/reviews/customers (plugin
 storage), Stripe checkout + webhooks, coupons engine, stock with atomic guards,
-reviews moderation, and React admin pages. Goal: out-build DashCommerce, MIT licensed.
+reviews moderation, and React admin pages. Goal: the best commerce plugin for EmDash, MIT licensed.
 
 ## Architecture (do not deviate without discussion)
 
