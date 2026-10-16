@@ -1,0 +1,51 @@
+# CI: typecheck + build the plugin, verify theme manifest + CLI syntax.
+# Runs on every push/PR to main. No secrets needed.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v22
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: packages/core/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+
+  theme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v22
+        with:
+          node-version: 22
+      - name: Verify every manifest entry exists
+        run: |
+          node -e "
+            const fs = require('fs'), path = require('path');
+            const m = JSON.parse(fs.readFileSync('packages/theme/theme.json', 'utf8'));
+            const missing = [...m.copy, m.config].filter(e => !fs.existsSync(path.join('packages/theme', e)));
+            if (missing.length) { console.error('missing:', missing); process.exit(1); }
+            console.log('theme manifest OK:', [...m.copy, m.config].length, 'entries');
+          "
+      - name: Syntax-check the scaffolder CLI
+        run: node --check packages/create/index.mjs && echo "create CLI OK"
