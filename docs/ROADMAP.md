@@ -113,7 +113,7 @@ alternatives. Each phase ships independently and stays shippable.
 ## Phase 8 — One-command onboarding ✅ DONE (verified live)
 
 - [x] `@sella/theme`: storefront files + `theme.json` manifest
-      (base template, copy list, wired config, core version pin)
+      (base template pin, file list, wired config, core version pin)
 - [x] `@sella/create`: zero-dependency CLI (base scaffold via
       create-emdash, core install w/ manual-link fallback, theme overlay,
       structure verification, next-steps printout)
@@ -121,6 +121,20 @@ alternatives. Each phase ships independently and stays shippable.
       responds — raw EmDash + plugin = store in ~5 minutes
 - Remaining before public launch: publish all three packages to npm,
   replace `file:`/local flags with registry versions, repo URL + CI
+
+## Phase 9 — More gateways + checkout UX ✅ DONE (verified live)
+
+- [x] Payment adapters: **PayPal** (Orders v2 approve→server-capture, refunds)
+      and **PayMongo** (GCash/GrabPay/cards checkout, refunds); both verify
+      webhooks by re-fetching from the provider — no signature crypto
+- [x] `POST /webhook/paypal`, `/webhook/paymongo` routes; provider registry
+      extended; `allowedHosts` extended; settings for all three providers
+- [x] Checkout page redesigned: step indicator, card sections, 4 selectable
+      payment-method cards, thumbnails + free-shipping bar in summary,
+      dynamic pay button per method
+- [x] Verified: clean no-keys errors on all new paths; manual regression green
+- Live-key testing (PayPal sandbox, PayMongo test mode) still required
+  before release; PayMongo field shapes flagged for doc re-check on API change
 
 ## Explicitly out of scope
 

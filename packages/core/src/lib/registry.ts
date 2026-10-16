@@ -1,9 +1,13 @@
 import { manualProvider } from "./providers/manual.js";
+import { paymongoProvider } from "./providers/paymongo.js";
+import { paypalProvider } from "./providers/paypal.js";
 import { stripeProvider } from "./providers/stripe.js";
 import type { PaymentProvider } from "./payments.js";
 
 const REGISTRY: Record<string, PaymentProvider> = {
 	stripe: stripeProvider,
+	paypal: paypalProvider,
+	paymongo: paymongoProvider,
 	manual: manualProvider,
 };
 

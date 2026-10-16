@@ -40,7 +40,20 @@ EmDash version support: `emdash ^1.0.1`.
 | `email:send` | Order confirmations (best-effort; needs a deliver provider) |
 | `network:request` | Stripe API calls only |
 
-Allowed hosts: `api.stripe.com`.
+Allowed hosts: `api.stripe.com`, `api-m.paypal.com`, `api-m.sandbox.paypal.com`,
+`api.paymongo.com`.
+
+## Payment providers
+
+| ID | Label | Checkout | Webhook | Refund | Notes |
+|---|---|---|---|---|---|
+| `stripe` | Stripe | hosted Checkout + ephemeral coupons, subscriptions | signature-verified | full/partial | Apple/Google Pay via Payment Element |
+| `paypal` | PayPal | Orders v2 approve → server-side capture | fetch-confirmed | full/partial | USD-only in this revision; no subscriptions yet |
+| `paymongo` | PayMongo | Checkout Sessions (GCash/GrabPay/cards) | fetch-confirmed | full/partial | field shapes per public docs — re-check on API change |
+| `manual` | Manual/COD | records order + instructions, no redirect | none (merchant confirms) | none — settle outside | zero secrets |
+
+New gateways implement `PaymentProvider` (4 methods) — checkout, orders, stock,
+and emails never change. Webhook URLs: `/webhook/<id>` under the plugin path.
 
 ## Settings (admin → Plugins → Sella)
 
@@ -50,7 +63,11 @@ Schema defaults fill the form; the runtime applies the same fallbacks.
 | Key | Default | Notes |
 |---|---|---|
 | `stripeSecretKey` | — | required for card payments |
-| `stripeWebhookSecret` | — | required for the webhook route |
+| `stripeWebhookSecret` | — | required for the Stripe webhook route |
+| `stripeMode` | test | display only |
+| `paypalClientId` / `paypalSecret` | — | required for PayPal (sandbox keys to start) |
+| `paypalMode` | sandbox | display only |
+| `paymongoSecretKey` | — | required for PayMongo |
 | `stripeMode` | test | display only |
 | `freeShippingAt` / `flatShipping` | 75 / 6.95 | server-side totals |
 | `storeName` / `supportEmail` | … | order emails |

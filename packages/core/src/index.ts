@@ -50,7 +50,7 @@ import {
 	reviewSummaryRoute,
 } from "./routes/reviews.js";
 import { seedDemoRoute } from "./routes/seed.js";
-import { stripeWebhookRoute } from "./routes/webhook.js";
+import { paymongoWebhookRoute, paypalWebhookRoute, stripeWebhookRoute } from "./routes/webhook.js";
 
 export interface SellaOptions {
 	/** Override the free-shipping threshold (defaults to settings value). */
@@ -77,7 +77,7 @@ export function createPlugin(options: SellaOptions = {}) {
 		version: PLUGIN_VERSION,
 
 		capabilities: ["content:read", "email:send", "network:request"],
-		allowedHosts: ["api.stripe.com"],
+		allowedHosts: ["api.stripe.com", "api-m.paypal.com", "api-m.sandbox.paypal.com", "api.paymongo.com"],
 
 		storage: {
 			// NOTE (verified Oct 2026): declaration changes re-sync on restart,
@@ -122,15 +122,27 @@ export function createPlugin(options: SellaOptions = {}) {
 			settingsSchema: {
 				stripeSecretKey: { type: "secret", label: "Stripe secret key" },
 				stripeWebhookSecret: { type: "secret", label: "Stripe webhook secret" },
-				stripeMode: {
-					type: "select",
-					label: "Stripe mode",
-					options: [
-						{ value: "test", label: "Test" },
-						{ value: "live", label: "Live" },
-					],
-					default: "test",
-				},
+			stripeMode: {
+				type: "select",
+				label: "Stripe mode",
+				options: [
+					{ value: "test", label: "Test" },
+					{ value: "live", label: "Live" },
+				],
+				default: "test",
+			},
+			paypalClientId: { type: "secret", label: "PayPal client ID" },
+			paypalSecret: { type: "secret", label: "PayPal secret" },
+			paypalMode: {
+				type: "select",
+				label: "PayPal mode",
+				options: [
+					{ value: "sandbox", label: "Sandbox" },
+					{ value: "live", label: "Live" },
+				],
+				default: "sandbox",
+			},
+			paymongoSecretKey: { type: "secret", label: "PayMongo secret key" },
 				freeShippingAt: { type: "number", label: "Free shipping threshold (USD)", default: 75 },
 				flatShipping: { type: "number", label: "Flat shipping rate (USD)", default: 6.95 },
 				storeName: { type: "string", label: "Store name", default: "Northwind Supply Co." },
@@ -218,6 +230,8 @@ export function createPlugin(options: SellaOptions = {}) {
 			"coupons/delete": couponDeleteRoute,
 			checkout: checkoutRoute,
 			"webhook/stripe": stripeWebhookRoute,
+			"webhook/paypal": paypalWebhookRoute,
+			"webhook/paymongo": paymongoWebhookRoute,
 			"orders/by-session": orderBySessionRoute,
 			"orders/mark-paid": orderMarkPaidRoute,
 			"orders/list": orderListRoute,

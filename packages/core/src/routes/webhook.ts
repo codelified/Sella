@@ -3,6 +3,7 @@ import { decrementStock } from "../lib/inventory.js";
 import { bumpCouponUse } from "../lib/coupons.js";
 import { sendPastDueNotice } from "../lib/mailer.js";
 import { onOrderPaid } from "../lib/paid.js";
+import { capturePaypalOrder } from "../lib/providers/paypal.js";
 import { getProvider } from "../lib/registry.js";
 
 /** Subscription lifecycle: renewals, past-due, cancellation. Idempotent per invoice. */
@@ -99,8 +100,15 @@ function headersOf(ctx: any): Record<string, string | null> {
 /** Apply a verified payment event to the matching order (idempotent). */
 async function applyEvent(ctx: any, event: any, providerId: string) {
 	const lookupField = event.type === "refunded" ? "paymentRef" : "providerRef";
-	const found = await ctx.storage.orders.query({ where: { [lookupField]: event.ref }, limit: 1 });
-	const row = found.items[0];
+	let row =
+		(await ctx.storage.orders.query({ where: { [lookupField]: event.ref }, limit: 1 }).catch(() => null))?.items?.[0] ??
+		null;
+	if (!row && event.type === "completed") {
+		// Gateways that reference our order number instead of their own session id.
+		row =
+			(await ctx.storage.orders.query({ where: { number: event.ref }, limit: 1 }).catch(() => null))?.items?.[0] ??
+			null;
+	}
 	if (!row) {
 		ctx.log?.info?.("Webhook for unknown order", { providerId, ref: event.ref });
 		return { received: true, matched: false };
@@ -180,10 +188,22 @@ export const stripeWebhookRoute = definePluginRoute({
 		const raw = typeof ctx.input === "string" ? ctx.input : "";
 		if (!raw) return { error: { code: "EMPTY_BODY", message: "Missing webhook body." } };
 		const event = await provider
-			.verifyWebhook(raw, headersOf(ctx), { settings: ctx.settings })
+			.verifyWebhook(raw, headersOf(ctx), { settings: ctx.settings, http: ctx.http })
 			.catch(() => null);
 		if (!event) {
 			return { error: { code: "BAD_SIGNATURE", message: "Invalid signature." } };
+		}
+		// PayPal approve-then-capture: settle the approved order before marking paid.
+		const needsCapture = (event as any).captureApprovedOrder === true;
+		if (needsCapture) {
+			try {
+				const cap = await capturePaypalOrder(ctx.http, ctx.settings, event.ref);
+				event.paymentRef = cap.captureId;
+				event.amount = cap.amount;
+			} catch (err) {
+				ctx.log?.info?.("PayPal capture failed", { ref: event.ref, error: String(err) });
+				return { error: { code: "CAPTURE_FAILED", message: "Payment approved but capture failed — check PayPal dashboard." } };
+			}
 		}
 		if ((event as any).subject === "subscription") {
 			return applySubscriptionEvent(ctx, event);
@@ -216,5 +236,43 @@ export const stripeWebhookRoute = definePluginRoute({
 			}
 		}
 		return applied;
+	},
+});
+
+export const paymongoWebhookRoute = definePluginRoute({
+	public: true,
+	methods: ["POST"],
+	request: { body: "text" },
+	handler: async (ctx: any) => {
+		const provider = getProvider("paymongo");
+		if (!provider) return { error: { code: "NO_PROVIDER", message: "PayMongo provider missing." } };
+		const raw = typeof ctx.input === "string" ? ctx.input : "";
+		if (!raw) return { error: { code: "EMPTY_BODY", message: "Missing webhook body." } };
+		const event = await provider
+			.verifyWebhook(raw, headersOf(ctx), { settings: ctx.settings, http: ctx.http })
+			.catch(() => null);
+		if (!event) {
+			return { error: { code: "UNVERIFIED", message: "Event could not be confirmed with PayMongo." } };
+		}
+		return applyEvent(ctx, event, "paymongo");
+	},
+});
+
+export const paypalWebhookRoute = definePluginRoute({
+	public: true,
+	methods: ["POST"],
+	request: { body: "text" },
+	handler: async (ctx: any) => {
+		const provider = getProvider("paypal");
+		if (!provider) return { error: { code: "NO_PROVIDER", message: "PayPal provider missing." } };
+		const raw = typeof ctx.input === "string" ? ctx.input : "";
+		if (!raw) return { error: { code: "EMPTY_BODY", message: "Missing webhook body." } };
+		const event = await provider
+			.verifyWebhook(raw, headersOf(ctx), { settings: ctx.settings, http: ctx.http })
+			.catch(() => null);
+		if (!event) {
+			return { error: { code: "UNVERIFIED", message: "Event could not be confirmed with PayPal." } };
+		}
+		return applyEvent(ctx, event, "paypal");
 	},
 });

@@ -86,7 +86,7 @@ export interface PaymentProvider {
 	verifyWebhook(
 		rawBody: string,
 		headers: Record<string, string | null>,
-		deps: { settings: SettingsLike },
+		deps: { settings: SettingsLike; http: HttpLike },
 	): Promise<PaymentEvent | null>;
 	refund(
 		paymentRef: string,
