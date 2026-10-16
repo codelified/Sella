@@ -134,3 +134,9 @@ All verified against `emdash@1.3.0` on the playground site (Oct 2026).
     into `options` (`plugin:{id}:cart:{cartId}`, `plugin:{id}:unsubtoken:{t}`),
     and detection routes (`carts/stale`) expose exactly what the cron acts on.
     Only the timed trigger itself is unverified until it fires.
+31. **Raw plugin routes can NEVER serve CSS.** `text/css` is in the host's
+    blocked active-content list (`ACTIVE_RESPONSE_TYPES`), alongside HTML/JS.
+    Pattern that works: public JSON route returns token payload → theme Astro
+    layout fetches server-side and inlines `<style>`. Use `html:root`
+    specificity to beat both layered base tokens and the unlayered theme file
+    regardless of stylesheet order.

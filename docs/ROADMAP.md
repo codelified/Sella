@@ -140,3 +140,22 @@ alternatives. Each phase ships independently and stays shippable.
 
 Marketplace payouts, multi-vendor, dropshipping — out of scope; Sella
 owns the single-merchant experience.
+
+## Phase 10 — Sella Designs (runtime-swappable themes) ✅ DONE (verified live)
+
+- [x] Token-map designs (light + dark) in plugin storage + 3 presets
+      (Ember, Forest, Ocean), lazy-seeded on first use
+- [x] Maximal runtime schema: colors, radius, fonts (curated menu, Google
+      `@import` at runtime), base size, border width, shadow personalities,
+      container width, section rhythm, ambient patterns (dots/grid/glow)
+- [x] `GET designs/active` (public JSON incl. rendered CSS, `?design=` preview)
+      — raw CSS routes are impossible (host blocks `text/css` as active
+      content), so the storefront inlines tokens server-side instead
+- [x] `GET designs/list` + `POST designs/activate` + admin Designs gallery
+      with live swatches, preview-in-new-tab, one-click activation
+- [x] Preset schema migration (`schema: 2` refreshes presets without touching
+      merchant customs)
+- [x] Verified per design: distinct fonts (Fraunces / DM Serif / Space Grotesk),
+      spacing (7/8/9rem), widths (1140/1200/1280px), shadows, patterns
+- Component *structure* stays build-time by design — tokens + content + sections
+  swap live; new layouts ship as scaffold-time themes (`create --theme` next)

@@ -50,6 +50,7 @@ import {
 	reviewSummaryRoute,
 } from "./routes/reviews.js";
 import { seedDemoRoute } from "./routes/seed.js";
+import { designActivateRoute, designActiveRoute, designListRoute } from "./routes/designs.js";
 import { paymongoWebhookRoute, paypalWebhookRoute, stripeWebhookRoute } from "./routes/webhook.js";
 
 export interface SellaOptions {
@@ -102,6 +103,9 @@ export function createPlugin(options: SellaOptions = {}) {
 			customers: {
 				indexes: ["email"],
 				uniqueIndexes: [],
+			},
+			designs: {
+				indexes: ["name"],
 			},
 			digital: {
 				indexes: ["slug"],
@@ -206,6 +210,7 @@ export function createPlugin(options: SellaOptions = {}) {
 				{ path: "/coupons", label: "Coupons", icon: "ticket", group: "Sella" },
 				{ path: "/reviews", label: "Reviews", icon: "star", group: "Sella" },
 				{ path: "/reports", label: "Reports", icon: "chart-bar", group: "Sella" },
+				{ path: "/designs", label: "Designs", icon: "palette", group: "Sella" },
 			],
 			widgets: [
 				{ id: "recent-orders", title: "Recent orders", size: "half" },
@@ -232,6 +237,9 @@ export function createPlugin(options: SellaOptions = {}) {
 			"webhook/stripe": stripeWebhookRoute,
 			"webhook/paypal": paypalWebhookRoute,
 			"webhook/paymongo": paymongoWebhookRoute,
+			"designs/list": designListRoute,
+			"designs/activate": designActivateRoute,
+			"designs/active": designActiveRoute,
 			"orders/by-session": orderBySessionRoute,
 			"orders/mark-paid": orderMarkPaidRoute,
 			"orders/list": orderListRoute,

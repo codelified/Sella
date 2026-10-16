@@ -41,6 +41,23 @@ if (Astro.cache?.enabled) {
 const settings = settingsResult.data;
 const siteTitle = settings?.title || "Acme";
 const fullTitle = title ? (title.includes(siteTitle) ? title : `${title} — ${siteTitle}`) : siteTitle;
+// Sella design: active storefront theme tokens, inlined so they beat the
+// layered base tokens. ?design=<id> previews a design without activating it.
+let sellaDesignCss = "";
+try {
+	const designParam = Astro.url.searchParams.get("design") ?? undefined;
+	const apiPath =
+		"/_emdash/api/plugins/sella/designs/active" +
+		(designParam ? `?design=${encodeURIComponent(designParam)}` : "");
+	const designRes = await fetch(new URL(apiPath, Astro.url.origin));
+	const designJson: any = await designRes.json().catch(() => null);
+	const css = designJson?.data?.css ?? designJson?.css ?? "";
+	if (typeof css === "string" && css.length > 0 && css.length < 8000) {
+		sellaDesignCss = css;
+	}
+} catch {
+	// Theme stays default; never break a page over decoration.
+}
 const siteDescription =
 	settings?.tagline || "Build products people actually want";
 const siteLogo = settings.logo?.url ? settings.logo : null;
@@ -81,6 +98,7 @@ const isLoggedIn = !!Astro.locals.user;
 		<EmDashHead page={pageCtx} />
 		<Font cssVariable="--font-body" preload />
 		<Font cssVariable="--font-display" />
+		{sellaDesignCss && <style id="sella-design" set:html={sellaDesignCss} />}
 		<script src="/cart.js" defer></script>
 		<script is:inline>
 			// Apply an explicit theme choice immediately to prevent flash.

@@ -1,5 +1,6 @@
 import type { PluginAdminExports } from "emdash";
 import { CouponsPage } from "./pages/CouponsPage.js";
+import { DesignsPage } from "./pages/DesignsPage.js";
 import { OrdersPage } from "./pages/OrdersPage.js";
 import { ReportsPage } from "./pages/ReportsPage.js";
 import { ReviewsPage } from "./pages/ReviewsPage.js";
@@ -10,6 +11,7 @@ export const pages: PluginAdminExports["pages"] = {
 	"/coupons": CouponsPage,
 	"/reviews": ReviewsPage,
 	"/reports": ReportsPage,
+	"/designs": DesignsPage,
 };
 
 export const widgets: PluginAdminExports["widgets"] = {
