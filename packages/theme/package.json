@@ -1,0 +1,7 @@
+{
+	"name": "@sella/theme",
+	"version": "0.1.0",
+	"description": "Northwind Supply Co. storefront theme for EmDash + Sella (not installed — copied by create-sella)",
+	"private": true,
+	"license": "MIT"
+}

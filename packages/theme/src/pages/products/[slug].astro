@@ -1,0 +1,8 @@
+---
+// EmDash admin builds entry "view" links as /{collection}/{slug} by
+// convention — i.e. /products/:slug. Our storefront serves products at
+// /shop/:slug, so redirect (preserving ?_preview= tokens and filters).
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect("/shop");
+return Astro.redirect(`/shop/${slug}${Astro.url.search}`, 302);
+---

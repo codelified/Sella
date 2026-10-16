@@ -1,0 +1,1185 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "Store Starter",
+		"description": "A storefront template with products, shop pages, and cart",
+		"author": "EmDash"
+	},
+	"settings": {
+		"title": "Northwind Supply Co.",
+		"tagline": "Everyday carry & outdoor goods built to last"
+	},
+	"blockTypes": [
+		{
+			"slug": "marketing_hero",
+			"label": "Hero",
+			"description": "A prominent page introduction with optional calls to action and media",
+			"category": "Marketing",
+			"currentVersion": 1,
+			"versions": [
+				{
+					"version": 1,
+					"fields": [
+						{
+							"slug": "anchor_id",
+							"label": "Anchor ID",
+							"type": "string",
+							"validation": {
+								"pattern": "^(?:$|[a-z][a-z0-9_-]*)$"
+							}
+						},
+						{
+							"slug": "headline",
+							"label": "Headline",
+							"type": "string",
+							"required": true
+						},
+						{
+							"slug": "subheadline",
+							"label": "Subheadline",
+							"type": "text"
+						},
+						{
+							"slug": "primary_cta_label",
+							"label": "Primary CTA label",
+							"type": "string"
+						},
+						{
+							"slug": "primary_cta_url",
+							"label": "Primary CTA URL",
+							"type": "string",
+							"validation": {
+								"pattern": "^(?:$|(?:https?://|mailto:|tel:|/(?!/)|#).+)$"
+							}
+						},
+						{
+							"slug": "secondary_cta_label",
+							"label": "Secondary CTA label",
+							"type": "string"
+						},
+						{
+							"slug": "secondary_cta_url",
+							"label": "Secondary CTA URL",
+							"type": "string",
+							"validation": {
+								"pattern": "^(?:$|(?:https?://|mailto:|tel:|/(?!/)|#).+)$"
+							}
+						},
+						{
+							"slug": "image",
+							"label": "Image",
+							"type": "image"
+						},
+						{
+							"slug": "centered",
+							"label": "Center the layout",
+							"type": "boolean",
+							"defaultValue": false
+						}
+					]
+				}
+			]
+		},
+		{
+			"slug": "marketing_features",
+			"label": "Features",
+			"description": "A grid of product or service features",
+			"category": "Marketing",
+			"currentVersion": 1,
+			"versions": [
+				{
+					"version": 1,
+					"fields": [
+						{
+							"slug": "anchor_id",
+							"label": "Anchor ID",
+							"type": "string",
+							"validation": {
+								"pattern": "^(?:$|[a-z][a-z0-9_-]*)$"
+							}
+						},
+						{
+							"slug": "headline",
+							"label": "Headline",
+							"type": "string",
+							"required": true
+						},
+						{
+							"slug": "subheadline",
+							"label": "Subheadline",
+							"type": "text"
+						},
+						{
+							"slug": "features",
+							"label": "Features",
+							"type": "repeater",
+							"required": true,
+							"validation": {
+								"minItems": 1,
+								"maxItems": 12,
+								"subFields": [
+									{
+										"slug": "icon",
+										"label": "Icon",
+										"type": "select",
+										"required": true,
+										"options": [
+											"zap",
+											"shield",
+											"users",
+											"chart",
+											"code",
+											"globe",
+											"heart",
+											"star",
+											"check",
+											"lock",
+											"clock",
+											"cloud"
+										]
+									},
+									{
+										"slug": "title",
+										"label": "Title",
+										"type": "string",
+										"required": true
+									},
+									{
+										"slug": "description",
+										"label": "Description",
+										"type": "text",
+										"required": true
+									}
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"slug": "marketing_testimonials",
+			"label": "Testimonials",
+			"description": "Customer quotes and attribution",
+			"category": "Marketing",
+			"currentVersion": 1,
+			"versions": [
+				{
+					"version": 1,
+					"fields": [
+						{
+							"slug": "anchor_id",
+							"label": "Anchor ID",
+							"type": "string",
+							"validation": {
+								"pattern": "^(?:$|[a-z][a-z0-9_-]*)$"
+							}
+						},
+						{
+							"slug": "headline",
+							"label": "Headline",
+							"type": "string"
+						},
+						{
+							"slug": "testimonials",
+							"label": "Testimonials",
+							"type": "repeater",
+							"required": true,
+							"validation": {
+								"minItems": 1,
+								"maxItems": 12,
+								"subFields": [
+									{
+										"slug": "quote",
+										"label": "Quote",
+										"type": "text",
+										"required": true
+									},
+									{
+										"slug": "author",
+										"label": "Author name",
+										"type": "string",
+										"required": true
+									},
+									{
+										"slug": "role",
+										"label": "Role or title",
+										"type": "string"
+									},
+									{
+										"slug": "company",
+										"label": "Company",
+										"type": "string"
+									},
+									{
+										"slug": "avatar",
+										"label": "Avatar",
+										"type": "image"
+									}
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"slug": "marketing_pricing",
+			"label": "Pricing",
+			"description": "A comparison of up to three pricing plans",
+			"category": "Marketing",
+			"currentVersion": 1,
+			"versions": [
+				{
+					"version": 1,
+					"fields": [
+						{
+							"slug": "anchor_id",
+							"label": "Anchor ID",
+							"type": "string",
+							"validation": {
+								"pattern": "^(?:$|[a-z][a-z0-9_-]*)$"
+							}
+						},
+						{
+							"slug": "headline",
+							"label": "Headline",
+							"type": "string"
+						},
+						{
+							"slug": "plans",
+							"label": "Plans",
+							"type": "repeater",
+							"required": true,
+							"validation": {
+								"minItems": 1,
+								"maxItems": 3,
+								"subFields": [
+									{
+										"slug": "name",
+										"label": "Plan name",
+										"type": "string",
+										"required": true
+									},
+									{
+										"slug": "price",
+										"label": "Price",
+										"type": "string",
+										"required": true
+									},
+									{
+										"slug": "period",
+										"label": "Period",
+										"type": "string"
+									},
+									{
+										"slug": "description",
+										"label": "Description",
+										"type": "text"
+									},
+									{
+										"slug": "features",
+										"label": "Features, one per line",
+										"type": "text"
+									},
+									{
+										"slug": "cta_label",
+										"label": "CTA label",
+										"type": "string",
+										"required": true
+									},
+									{
+										"slug": "cta_url",
+										"label": "CTA URL",
+										"type": "string",
+										"required": true
+									},
+									{
+										"slug": "highlighted",
+										"label": "Highlight this plan",
+										"type": "boolean"
+									}
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"slug": "marketing_faq",
+			"label": "FAQ",
+			"description": "A list of frequently asked questions",
+			"category": "Marketing",
+			"currentVersion": 1,
+			"versions": [
+				{
+					"version": 1,
+					"fields": [
+						{
+							"slug": "anchor_id",
+							"label": "Anchor ID",
+							"type": "string",
+							"validation": {
+								"pattern": "^(?:$|[a-z][a-z0-9_-]*)$"
+							}
+						},
+						{
+							"slug": "headline",
+							"label": "Headline",
+							"type": "string"
+						},
+						{
+							"slug": "items",
+							"label": "Questions",
+							"type": "repeater",
+							"required": true,
+							"validation": {
+								"minItems": 1,
+								"maxItems": 12,
+								"subFields": [
+									{
+										"slug": "question",
+										"label": "Question",
+										"type": "string",
+										"required": true
+									},
+									{
+										"slug": "answer",
+										"label": "Answer",
+										"type": "text",
+										"required": true
+									}
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"collections": [
+		{
+			"slug": "pages",
+			"label": "Pages",
+			"labelSingular": "Page",
+			"supports": [
+				"drafts",
+				"revisions",
+				"seo"
+			],
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "blocks",
+					"validation": {
+						"allowedTypes": [
+							"marketing_hero",
+							"marketing_features",
+							"marketing_testimonials",
+							"marketing_pricing",
+							"marketing_faq"
+						],
+						"maxItems": 20
+					}
+				}
+			]
+		},
+		{
+			"slug": "products",
+			"label": "Products",
+			"labelSingular": "Product",
+			"supports": [
+				"drafts",
+				"revisions",
+				"search",
+				"seo"
+			],
+			"fields": [
+				{
+					"slug": "name",
+					"label": "Name",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "price",
+					"label": "Price (USD)",
+					"type": "number",
+					"required": true
+				},
+				{
+					"slug": "compare_at_price",
+					"label": "Compare-at price (USD)",
+					"type": "number"
+				},
+				{
+					"slug": "sku",
+					"label": "SKU",
+					"type": "string"
+				},
+				{
+					"slug": "badge",
+					"label": "Badge (e.g. New, Sale, Bestseller)",
+					"type": "string"
+				},
+				{
+					"slug": "short_description",
+					"label": "Short description",
+					"type": "text",
+					"searchable": true
+				},
+				{
+					"slug": "description",
+					"label": "Description",
+					"type": "portableText",
+					"searchable": true
+				},
+				{
+					"slug": "image",
+					"label": "Product image",
+					"type": "image",
+					"required": true
+				},
+				{
+					"slug": "featured",
+					"label": "Feature on homepage",
+					"type": "boolean"
+				},
+				{
+					"slug": "stock",
+					"label": "Stock quantity",
+					"type": "integer"
+				}
+			]
+		}
+	],
+	"taxonomies": [
+		{
+			"name": "category",
+			"label": "Categories",
+			"labelSingular": "Category",
+			"hierarchical": false,
+			"collections": [
+				"products"
+			],
+			"terms": [
+				{
+					"slug": "wear",
+					"label": "Wear"
+				},
+				{
+					"slug": "tech",
+					"label": "Tech"
+				},
+				{
+					"slug": "carry",
+					"label": "Carry"
+				},
+				{
+					"slug": "home",
+					"label": "Home"
+				}
+			]
+		}
+	],
+	"menus": [
+		{
+			"name": "primary",
+			"label": "Primary Navigation",
+			"items": [
+				{
+					"type": "custom",
+					"label": "Shop",
+					"url": "/shop"
+				},
+				{
+					"type": "custom",
+					"label": "Perks",
+					"url": "/#perks"
+				},
+				{
+					"type": "custom",
+					"label": "Reviews",
+					"url": "/#reviews"
+				},
+				{
+					"type": "custom",
+					"label": "FAQ",
+					"url": "/#faq"
+				},
+				{
+					"type": "custom",
+					"label": "Contact",
+					"url": "/contact"
+				}
+			]
+		},
+		{
+			"name": "footer_product",
+			"label": "Footer: Shop",
+			"items": [
+				{
+					"type": "custom",
+					"label": "Shop all",
+					"url": "/shop"
+				},
+				{
+					"type": "custom",
+					"label": "Wholesale",
+					"url": "/pricing"
+				},
+				{
+					"type": "custom",
+					"label": "Contact",
+					"url": "/contact"
+				}
+			]
+		},
+		{
+			"name": "footer_company",
+			"label": "Footer: Company",
+			"items": [
+				{
+					"type": "custom",
+					"label": "Home",
+					"url": "/"
+				},
+				{
+					"type": "custom",
+					"label": "Perks",
+					"url": "/#perks"
+				},
+				{
+					"type": "custom",
+					"label": "Reviews",
+					"url": "/#reviews"
+				}
+			]
+		},
+		{
+			"name": "footer_support",
+			"label": "Footer: Support",
+			"items": [
+				{
+					"type": "custom",
+					"label": "FAQ",
+					"url": "/#faq"
+				},
+				{
+					"type": "custom",
+					"label": "Contact",
+					"url": "/contact"
+				},
+				{
+					"type": "custom",
+					"label": "Email us",
+					"url": "mailto:hello@northwindsupply.example"
+				}
+			]
+		}
+	],
+	"content": {
+		"pages": [
+			{
+				"id": "home",
+				"slug": "home",
+				"status": "published",
+				"data": {
+					"title": "Home",
+					"content": [
+						{
+							"_type": "marketing_hero",
+							"_version": 1,
+							"_key": "hero",
+							"headline": "Gear that keeps up with you",
+							"subheadline": "Northwind Supply Co. makes everyday carry and outdoor goods built to last — honestly priced, shipped in 24 hours, and backed for 2 years.",
+							"primary_cta_label": "Shop the collection",
+							"primary_cta_url": "/shop",
+							"secondary_cta_label": "Wholesale & bulk",
+							"secondary_cta_url": "/pricing"
+						},
+						{
+							"_type": "marketing_features",
+							"_version": 1,
+							"_key": "features",
+							"anchor_id": "perks",
+							"headline": "Why 40,000+ customers shop Sella",
+							"subheadline": "Straightforward policies, fast shipping, and gear guaranteed for years — not seasons.",
+							"features": [
+								{
+									"icon": "clock",
+									"title": "Ships in 24 hours",
+									"description": "Order by 2pm ET and your gear leaves our warehouse the same business day."
+								},
+								{
+									"icon": "check",
+									"title": "Free 60-day returns",
+									"description": "Use it on the trail, at the gym, every day. Not happy? Send it back on us."
+								},
+								{
+									"icon": "shield",
+									"title": "2-year warranty",
+									"description": "Stitching, zippers, straps, soles — if it fails under normal use, we repair or replace it."
+								},
+								{
+									"icon": "globe",
+									"title": "Carbon-neutral delivery",
+									"description": "Every order ships carbon-neutral in plastic-free packaging."
+								},
+								{
+									"icon": "star",
+									"title": "4.9 from 12,000+ reviews",
+									"description": "Real reviews from verified buyers. No incentives, no filters."
+								},
+								{
+									"icon": "heart",
+									"title": "Designed to be repaired",
+									"description": "Free repair guides and spare parts for every product we sell."
+								}
+							]
+						},
+						{
+							"_type": "marketing_testimonials",
+							"_version": 1,
+							"_key": "testimonials",
+							"anchor_id": "reviews",
+							"headline": "Worn, carried, and reviewed",
+							"testimonials": [
+								{
+									"quote": "The Trailhead has survived two years of daily commuting and a week in the Cascades. Still looks new.",
+									"author": "Dana K.",
+									"role": "Verified buyer",
+									"company": "Portland, OR"
+								},
+								{
+									"quote": "Ordered Tuesday morning, on my doorstep Wednesday. The Meridian watch gets compliments weekly.",
+									"author": "Marcus T.",
+									"role": "Verified buyer",
+									"company": "Austin, TX"
+								},
+								{
+									"quote": "Support replaced a chewed-through strap (thanks, puppy) with zero hassle. Lifelong customer.",
+									"author": "Priya S.",
+									"role": "Verified buyer",
+									"company": "Chicago, IL"
+								}
+							]
+						},
+						{
+							"_type": "marketing_faq",
+							"_version": 1,
+							"_key": "faq",
+							"anchor_id": "faq",
+							"headline": "Shipping, returns & warranty",
+							"items": [
+								{
+									"question": "How fast is shipping?",
+									"answer": "Orders placed before 2pm ET ship the same business day. Standard shipping (3-5 days) is free over $75; express options appear at checkout."
+								},
+								{
+									"question": "What is your return policy?",
+									"answer": "60 days, no questions, prepaid label included. Products must be in usable condition — yes, you can actually try them first."
+								},
+								{
+									"question": "How does the 2-year warranty work?",
+									"answer": "If anything fails under normal use within 2 years, email support with a photo. We repair or replace, usually within a week."
+								},
+								{
+									"question": "Do you ship internationally?",
+									"answer": "Yes — we ship to 40+ countries. Duties are calculated at checkout so there are no surprises on delivery."
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"id": "pricing",
+				"slug": "pricing",
+				"status": "published",
+				"data": {
+					"title": "Wholesale",
+					"content": [
+						{
+							"_type": "marketing_hero",
+							"_version": 1,
+							"_key": "pricing-hero",
+							"headline": "Wholesale & bulk pricing",
+							"subheadline": "Outfit your team, stock your shelves, or co-brand our bestsellers. Flexible minimums, honest margins.",
+							"centered": true
+						},
+						{
+							"_type": "marketing_pricing",
+							"_version": 1,
+							"_key": "pricing-plans",
+							"plans": [
+								{
+									"name": "Pop-up",
+									"price": "15% off",
+									"period": "12+ units",
+									"description": "For markets, events, and small teams",
+									"features": "12-unit minimum\nMixed SKUs welcome\nFree display kit\nEmail support",
+									"cta_label": "Start an order",
+									"cta_url": "/contact"
+								},
+								{
+									"name": "Outfitter",
+									"price": "25% off",
+									"period": "50+ units",
+									"description": "For retail shelves and growing teams",
+									"features": "Everything in Pop-up\nCustom hangtags & packaging\nDedicated account manager\nNet-30 terms",
+									"cta_label": "Talk to wholesale",
+									"cta_url": "/contact",
+									"highlighted": true
+								},
+								{
+									"name": "Expedition",
+									"price": "Custom",
+									"period": "500+ units",
+									"description": "Co-branded runs and corporate gifting",
+									"features": "Everything in Outfitter\nCustom colors & logo runs\nPriority production slots\nVolume freight rates",
+									"cta_label": "Request a quote",
+									"cta_url": "/contact"
+								}
+							]
+						},
+						{
+							"_type": "marketing_faq",
+							"_version": 1,
+							"_key": "pricing-faq",
+							"headline": "Wholesale FAQ",
+							"items": [
+								{
+									"question": "What are the minimums?",
+									"answer": "12 units per order, mix and match across the whole catalog."
+								},
+								{
+									"question": "How long does a bulk order take?",
+									"answer": "Stock styles ship in 5-7 days; custom co-branded runs take 4-6 weeks."
+								},
+								{
+									"question": "Can I get samples first?",
+									"answer": "Yes — sample kits ship free, and the cost is credited toward your first order."
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"id": "contact",
+				"slug": "contact",
+				"status": "published",
+				"data": {
+					"title": "Contact",
+					"content": [
+						{
+							"_type": "marketing_hero",
+							"_version": 1,
+							"_key": "contact-hero",
+							"headline": "Get in touch",
+							"subheadline": "Order questions, wholesale inquiries, or warranty claims — pick the right inbox and we'll reply within one business day.",
+							"centered": true
+						}
+					]
+				}
+			}
+		],
+		"products": [
+			{
+				"id": "prod-meridian-watch",
+				"slug": "meridian-steel-watch",
+				"status": "published",
+				"data": {
+					"name": "Meridian Steel Watch",
+					"price": 189,
+					"compare_at_price": 229,
+					"sku": "NW-WCH-001",
+					"badge": "Bestseller",
+					"short_description": "Brushed steel, sapphire glass, 5ATM. The last everyday watch you'll need to buy.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "A 40mm brushed-steel case, sapphire crystal, and a movement rated for a decade of daily wear. Water resistant to 5ATM, so rain, rivers, and dishwashers are all fine."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Ships with both a steel link bracelet and a canvas strap. Spare links, pins, and batteries are stocked forever — this watch is designed to be serviced, not replaced."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Meridian steel watch product photo",
+							"filename": "meridian-watch.jpg"
+						}
+					},
+					"featured": true,
+					"stock": 34
+				},
+				"taxonomies": {
+					"category": [
+						"wear"
+					]
+				}
+			},
+			{
+				"id": "prod-aura-headphones",
+				"slug": "aura-wireless-headphones",
+				"status": "published",
+				"data": {
+					"name": "Aura Wireless Headphones",
+					"price": 129,
+					"sku": "NW-AUD-002",
+					"badge": "New",
+					"short_description": "40-hour battery, memory-foam cups, folds flat for the carry-on.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Custom 40mm drivers tuned for long listening sessions, hybrid noise cancellation, and memory-foam earcups that stay comfortable on red-eyes and workdays alike."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "40 hours per charge, multipoint Bluetooth, and a folding design with a hard travel case included. Earpads are user-replaceable in under a minute."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Aura wireless headphones product photo",
+							"filename": "aura-headphones.jpg"
+						}
+					},
+					"featured": true,
+					"stock": 58
+				},
+				"taxonomies": {
+					"category": [
+						"tech"
+					]
+				}
+			},
+			{
+				"id": "prod-trailhead-backpack",
+				"slug": "trailhead-canvas-backpack",
+				"status": "published",
+				"data": {
+					"name": "Trailhead Canvas Backpack",
+					"price": 98,
+					"sku": "NW-CAR-003",
+					"badge": "Bestseller",
+					"short_description": "22L waxed canvas, padded 16-inch laptop sleeve, lifetime zipper warranty.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "22 liters of 18oz waxed canvas with full-grain leather trim. A suspended, padded sleeve fits 16-inch laptops, and the clamshell opening makes TSA lines painless."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "YKK zippers throughout, covered by our lifetime zipper warranty. Rewax it once a year and it will outlast your itinerary."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Trailhead canvas backpack product photo",
+							"filename": "trailhead-backpack.jpg"
+						}
+					},
+					"featured": true,
+					"stock": 21
+				},
+				"taxonomies": {
+					"category": [
+						"carry"
+					]
+				}
+			},
+			{
+				"id": "prod-velocity-runner",
+				"slug": "velocity-street-runner",
+				"status": "published",
+				"data": {
+					"name": "Velocity Street Runner",
+					"price": 139,
+					"compare_at_price": 159,
+					"sku": "NW-WEA-004",
+					"badge": "Sale",
+					"short_description": "Responsive road foam in a knit upper. Your daily 5K, upgraded.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "A nitrogen-infused midsole returns energy stride after stride, while the engineered-knit upper breathes through summer miles."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "8mm drop, 240g in men's size 9. Recycled lining and a take-back program when they finally wear out."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Velocity street runner shoe product photo",
+							"filename": "velocity-runner.jpg"
+						}
+					},
+					"featured": false,
+					"stock": 12
+				},
+				"taxonomies": {
+					"category": [
+						"wear"
+					]
+				}
+			},
+			{
+				"id": "prod-field-camera",
+				"slug": "field-instant-camera",
+				"status": "published",
+				"data": {
+					"name": "Field Instant Camera",
+					"price": 89,
+					"sku": "NW-TCH-005",
+					"short_description": "Point, shoot, print. Credit-card prints in 90 seconds, no app required.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "An automatic-exposure instant camera with a selfie mirror and double-exposure mode. Prints develop in about 90 seconds."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Runs on two AA batteries and standard instant film, available everywhere. Includes wrist strap and a 10-pack of film to start."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Field instant camera product photo",
+							"filename": "field-camera.jpg"
+						}
+					},
+					"featured": false,
+					"stock": 44
+				},
+				"taxonomies": {
+					"category": [
+						"tech"
+					]
+				}
+			},
+			{
+				"id": "prod-solstice-sunglasses",
+				"slug": "solstice-sunglasses",
+				"status": "published",
+				"data": {
+					"name": "Solstice Sunglasses",
+					"price": 75,
+					"sku": "NW-WEA-006",
+					"short_description": "Polarized CR-39 lenses in a hand-finished acetate frame.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Polarized CR-39 lenses with 100% UV protection, set in a five-barrel-hinge acetate frame that's polished by hand."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Includes a hard case, microfiber cloth, and free lens replacement for the first year — scratches happen."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Solstice sunglasses product photo",
+							"filename": "solstice-sunglasses.jpg"
+						}
+					},
+					"featured": false,
+					"stock": 67
+				},
+				"taxonomies": {
+					"category": [
+						"wear"
+					]
+				}
+			},
+			{
+				"id": "prod-kiln-pourover",
+				"slug": "kiln-pourover-set",
+				"status": "published",
+				"data": {
+					"name": "Kiln Pour-Over Set",
+					"price": 54,
+					"sku": "NW-HOM-007",
+					"short_description": "Stoneware dripper, carafe, and walnut collar. Slow mornings start here.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "A hand-glazed stoneware dripper and 600ml carafe with a walnut collar. The ribbed interior keeps drawdowns even from the first pour to the fiftieth."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Dishwasher safe, fits standard #2 filters, and every piece is replaceable on its own — chip the dripper and you don't rebuy the set."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Kiln pour-over coffee set product photo",
+							"filename": "kiln-pourover.jpg"
+						}
+					},
+					"featured": false,
+					"stock": 29
+				},
+				"taxonomies": {
+					"category": [
+						"home"
+					]
+				}
+			},
+			{
+				"id": "prod-court-sneaker",
+				"slug": "court-classic-sneaker",
+				"status": "published",
+				"data": {
+					"name": "Court Classic Sneaker",
+					"price": 85,
+					"compare_at_price": 110,
+					"sku": "NW-WEA-008",
+					"badge": "Sale",
+					"short_description": "Full-grain leather, natural rubber cupsole. Goes with everything you own.",
+					"description": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Full-grain leather uppers on a natural rubber cupsole, with a cork-bed insole that molds to your foot in the first week."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Resoleable by any cobbler and backed by our repair program — send them in and we'll recondition the leather for free."
+								}
+							]
+						}
+					],
+					"image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=1200&q=80",
+							"alt": "Court classic sneaker product photo",
+							"filename": "court-sneaker.jpg"
+						}
+					},
+					"featured": false,
+					"stock": 19
+				},
+				"taxonomies": {
+					"category": [
+						"wear"
+					]
+				}
+			}
+		]
+	}
+}

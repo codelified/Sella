@@ -1,0 +1,273 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Your cart" description="Review your cart. Free shipping over $75.">
+	<section class="container section cart-page">
+		<h1>Your cart</h1>
+		<div id="cart-root">
+			<p class="loading">Loading your cart…</p>
+		</div>
+	</section>
+</Base>
+
+<script is:inline>
+document.addEventListener("DOMContentLoaded", function () {
+	var root = document.getElementById("cart-root");
+	if (!root || !window.NWCart) return;
+	var Cart = window.NWCart;
+
+	function esc(s) {
+		return String(s).replace(/[&<>"]/g, function (c) {
+			return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+		});
+	}
+
+	function render() {
+		var items = Cart.items();
+		if (items.length === 0) {
+			root.innerHTML =
+				'<div class="empty-state"><h2>Your cart is empty</h2>' +
+				"<p>Beautiful gear awaits. Start with our bestsellers.</p>" +
+				'<a href="/shop" class="btn btn-primary btn-lg">Shop the collection</a></div>';
+			return;
+		}
+		var subtotal = Cart.subtotal();
+		var threshold = Cart.FREE_SHIPPING_AT;
+		var remaining = Math.max(0, threshold - subtotal);
+		var pct = Math.min(100, Math.round((subtotal / threshold) * 100));
+
+		var rows = items
+			.map(function (i) {
+				return (
+					'<div class="cart-row" data-id="' +
+					esc(i.id) +
+					'">' +
+					(i.image
+						? '<img class="cart-thumb" src="' + esc(i.image) + '" alt="" />'
+						: '<div class="cart-thumb cart-thumb-fallback"></div>') +
+					'<div class="cart-name">' +
+					esc(i.name) +
+					'<div class="cart-unit">' +
+					Cart.money(i.price) +
+					" each</div></div>" +
+					'<div class="cart-qty"><button type="button" data-dec aria-label="Decrease quantity">−</button>' +
+					"<span>" +
+					i.qty +
+					'</span><button type="button" data-inc aria-label="Increase quantity">+</button></div>' +
+					'<div class="cart-line">' +
+					Cart.money(i.price * i.qty) +
+					'</div><button type="button" class="cart-remove" data-remove aria-label="Remove ' +
+					esc(i.name) +
+					'">Remove</button></div>'
+				);
+			})
+			.join("");
+
+		root.innerHTML =
+			'<div class="ship-bar">' +
+			(remaining > 0
+				? "<p>You're <strong>" +
+					Cart.money(remaining) +
+					"</strong> away from free shipping</p>"
+				: "<p>🎉 You've unlocked <strong>free shipping</strong></p>") +
+			'<div class="ship-track"><div class="ship-fill" style="width:' + pct + '%"></div></div></div>' +
+			'<div class="cart-rows">' +
+			rows +
+			"</div>" +
+			'<div class="cart-summary"><div class="subtotal"><span>Subtotal</span><strong>' +
+			Cart.money(subtotal) +
+			"</strong></div>" +
+			'<p class="fine">Shipping & taxes calculated at checkout.</p>' +
+			'<div class="cart-actions"><a href="/checkout" class="btn btn-primary btn-lg">Checkout →</a>' +
+			'<button type="button" class="btn btn-secondary" data-clear>Clear cart</button></div></div>';
+	}
+
+	root.addEventListener("click", function (e) {
+		var t = e.target;
+		var row = t.closest ? t.closest(".cart-row") : null;
+		if (t.hasAttribute("data-clear")) {
+			Cart.clear();
+			return;
+		}
+		if (!row) return;
+		var id = row.getAttribute("data-id");
+		var current = Cart.items().find(function (i) {
+			return i.id === id;
+		});
+		if (!current) return;
+		if (t.hasAttribute("data-inc")) Cart.setQty(id, current.qty + 1);
+		else if (t.hasAttribute("data-dec")) Cart.setQty(id, current.qty - 1);
+		else if (t.hasAttribute("data-remove")) Cart.remove(id);
+	});
+
+	document.addEventListener("nw:cart-updated", render);
+	render();
+});
+</script>
+
+<style>
+	.cart-page h1 {
+		margin-bottom: var(--spacing-xl);
+		letter-spacing: var(--tracking-tight);
+	}
+
+	.loading,
+	.empty-state {
+		text-align: center;
+		padding: var(--spacing-4xl) 0;
+	}
+
+	.empty-state p {
+		color: var(--color-muted);
+		margin: var(--spacing-md) 0 var(--spacing-xl);
+	}
+
+	.ship-bar {
+		margin-bottom: var(--spacing-xl);
+		padding: var(--spacing-lg);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+	}
+
+	.ship-bar p {
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.ship-track {
+		height: 8px;
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-full);
+		overflow: hidden;
+	}
+
+	.ship-fill {
+		height: 100%;
+		background: var(--gradient-brand-strong);
+		transition: width 0.3s ease;
+	}
+
+	.cart-rows {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+	}
+
+	.cart-row {
+		display: grid;
+		grid-template-columns: 72px 1fr auto auto auto;
+		gap: var(--spacing-lg);
+		align-items: center;
+		padding: var(--spacing-md);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+	}
+
+	.cart-thumb {
+		width: 72px;
+		height: 72px;
+		object-fit: cover;
+		border-radius: var(--radius);
+	}
+
+	.cart-thumb-fallback {
+		background: var(--gradient-brand-soft);
+		opacity: 0.5;
+	}
+
+	.cart-name {
+		font-weight: 600;
+	}
+
+	.cart-unit {
+		font-size: var(--font-size-sm);
+		font-weight: 400;
+		color: var(--color-muted);
+	}
+
+	.cart-qty {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.cart-qty button {
+		width: 32px;
+		height: 32px;
+		font-size: var(--font-size-lg);
+		line-height: 1;
+		color: var(--color-text);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+	}
+
+	.cart-line {
+		font-weight: 700;
+		min-width: 80px;
+		text-align: right;
+	}
+
+	.cart-remove {
+		background: none;
+		border: none;
+		padding: 0;
+		font: inherit;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+		cursor: pointer;
+	}
+
+	.cart-remove:hover {
+		color: var(--color-danger);
+	}
+
+	.cart-summary {
+		margin-top: var(--spacing-xl);
+		margin-left: auto;
+		max-width: 360px;
+	}
+
+	.subtotal {
+		display: flex;
+		justify-content: space-between;
+		font-size: var(--font-size-xl);
+	}
+
+	.fine {
+		margin-top: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-align: right;
+	}
+
+	.cart-actions {
+		display: flex;
+		gap: var(--spacing-md);
+		margin-top: var(--spacing-lg);
+		justify-content: flex-end;
+	}
+
+	@media (max-width: 700px) {
+		.cart-row {
+			grid-template-columns: 56px 1fr auto;
+		}
+
+		.cart-thumb {
+			width: 56px;
+			height: 56px;
+		}
+
+		.cart-line,
+		.cart-remove {
+			display: none;
+		}
+	}
+</style>

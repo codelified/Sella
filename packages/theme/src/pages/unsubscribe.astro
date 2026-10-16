@@ -1,0 +1,51 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Unsubscribe" description="Unsubscribe from cart reminders.">
+	<section class="container section thanks">
+		<div id="unsub-root">
+			<h1>Working…</h1>
+		</div>
+	</section>
+</Base>
+
+<script is:inline>
+document.addEventListener("DOMContentLoaded", function () {
+	var root = document.getElementById("unsub-root");
+	if (!root) return;
+	var token = new URLSearchParams(location.search).get("token");
+	if (!token) {
+		root.innerHTML = "<h1>Invalid link</h1><p class='muted'>This unsubscribe link is missing its token.</p>";
+		return;
+	}
+	fetch("/_emdash/api/plugins/sella/carts/unsubscribe?token=" + encodeURIComponent(token))
+		.then(function (r) {
+			return r.json();
+		})
+		.then(function (j) {
+			root.innerHTML = j.ok
+				? "<h1>Unsubscribed ✓</h1><p class='muted'>You won't receive cart reminders anymore. Order emails (receipts, shipping) are unaffected.</p><a href='/shop' class='btn btn-primary'>Back to shop</a>"
+				: "<h1>Link expired</h1><p class='muted'>This link is invalid" +
+					" or was already used.</p>";
+		})
+		.catch(function () {
+			root.innerHTML = "<h1>Something went wrong</h1><p class='muted'>Try again later.</p>";
+		});
+});
+</script>
+
+<style>
+	.thanks {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		text-align: center;
+		padding-top: var(--spacing-5xl);
+		padding-bottom: var(--spacing-5xl);
+	}
+
+	.muted {
+		color: var(--color-muted);
+		margin: var(--spacing-md) 0 var(--spacing-xl);
+	}
+</style>

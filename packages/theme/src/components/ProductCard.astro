@@ -1,0 +1,145 @@
+---
+import { Image } from "emdash/ui";
+
+// Shared product card for the shop listing, featured section, and related items.
+// Keep props loose (minimal interface) so the card never breaks when the
+// products schema gains new fields in the admin.
+interface ProductLike {
+	id: string;
+	data: {
+		name: string;
+		price: number;
+		compare_at_price?: number | null;
+		badge?: string | null;
+		short_description?: string | null;
+		image?: any;
+	};
+}
+
+const { product } = Astro.props as { product: ProductLike };
+const data = product.data;
+const onSale = (data.compare_at_price ?? 0) > data.price;
+---
+
+<article class="product-card">
+	<a href={`/shop/${product.id}`} class="product-media" aria-label={data.name}>
+		{
+			data.image ? (
+				<Image image={data.image} />
+			) : (
+				<div class="product-media-fallback" aria-hidden="true" />
+			)
+		}
+		{data.badge && <span class="product-badge">{data.badge}</span>}
+	</a>
+	<div class="product-info">
+		<h3 class="product-name">
+			<a href={`/shop/${product.id}`}>{data.name}</a>
+		</h3>
+		{data.short_description && <p class="product-short">{data.short_description}</p>}
+		<p class="product-price">
+			{"$" + data.price.toFixed(2)}
+			{onSale && <s class="product-compare">{"$" + data.compare_at_price!.toFixed(2)}</s>}
+		</p>
+	</div>
+</article>
+
+<style>
+	.product-card {
+		display: flex;
+		flex-direction: column;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		transition:
+			transform var(--transition-base),
+			box-shadow var(--transition-base),
+			border-color var(--transition-base);
+	}
+
+	.product-card:hover {
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-lg);
+		border-color: var(--color-brand-soft);
+	}
+
+	.product-media {
+		position: relative;
+		display: block;
+		aspect-ratio: 4 / 5;
+		overflow: hidden;
+		background: var(--gradient-brand-soft);
+	}
+
+	.product-media :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.product-card:hover .product-media :global(img) {
+		transform: scale(1.06);
+	}
+
+	.product-media-fallback {
+		width: 100%;
+		height: 100%;
+		background: var(--gradient-brand-soft);
+		opacity: 0.4;
+	}
+
+	.product-badge {
+		position: absolute;
+		top: var(--spacing-md);
+		left: var(--spacing-md);
+		padding: 4px var(--spacing-md);
+		font-size: var(--font-size-xs);
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-bg);
+		background: var(--color-text);
+		border-radius: var(--radius-full);
+		transform: rotate(-4deg);
+		box-shadow: var(--shadow);
+	}
+
+	.product-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--spacing-lg);
+	}
+
+	.product-name {
+		font-family: var(--font-display);
+		font-size: var(--font-size-xl);
+		font-weight: 600;
+		letter-spacing: -0.01em;
+	}
+
+	.product-short {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.product-price {
+		margin-top: var(--spacing-xs);
+		font-weight: 700;
+		font-size: var(--font-size-lg);
+		letter-spacing: var(--tracking-tight);
+	}
+
+	.product-compare {
+		margin-left: var(--spacing-sm);
+		font-weight: 400;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+</style>

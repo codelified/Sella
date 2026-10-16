@@ -1,0 +1,11 @@
+{
+	"name": "@sella/create",
+	"version": "0.1.0",
+	"description": "Scaffold a Sella store: EmDash + commerce plugin + storefront theme",
+	"type": "module",
+	"bin": {
+		"create-sella": "./index.mjs"
+	},
+	"files": ["index.mjs", "README.md"],
+	"license": "MIT"
+}

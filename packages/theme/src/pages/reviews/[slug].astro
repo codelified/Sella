@@ -1,0 +1,19 @@
+---
+// EmDash admin builds entry "view" links as /{collection}/{slug} — i.e.
+// /reviews/:slug. Reviews have no standalone page (they render inside the
+// product page), so redirect to the product's review section instead.
+import { getEmDashEntry } from "emdash";
+
+const { slug } = Astro.params;
+let target = "/shop";
+if (slug) {
+	try {
+		const { entry } = await getEmDashEntry("reviews", slug);
+		const productSlug = String((entry?.data as any)?.product_slug ?? "");
+		if (productSlug) target = `/shop/${productSlug}#reviews`;
+	} catch {
+		// fall through to /shop
+	}
+}
+return Astro.redirect(target, 302);
+---

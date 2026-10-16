@@ -1,0 +1,620 @@
+---
+import { getEmDashCollection, getEmDashEntry, getSeoMeta } from "emdash";
+import { Image, PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import ProductCard from "../../components/ProductCard.astro";
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect("/404");
+
+const { entry: product, cacheHint } = await getEmDashEntry("products", slug);
+if (!product) return Astro.redirect("/404");
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const seo = getSeoMeta(product, {
+	siteUrl: Astro.url.origin,
+	path: `/shop/${slug}`,
+	defaultDescription: product.data.short_description ?? undefined,
+});
+
+const data: any = product.data;
+const onSale = (data.compare_at_price ?? 0) > data.price;
+const stock = typeof data.stock === "number" ? data.stock : null;
+const soldOut = stock !== null && stock <= 0;
+const lowStock = stock !== null && stock > 0 && stock <= 15;
+const terms: any[] = (data as any).terms?.category ?? [];
+const primaryCat = terms[0]?.slug as string | undefined;
+
+// Related products: same category first, fill with latest otherwise.
+let related: any[] = [];
+try {
+	const res = await getEmDashCollection("products", {
+		status: "published",
+		...(primaryCat ? { where: { category: primaryCat } } : {}),
+		orderBy: { created_at: "desc" },
+		limit: 4,
+	});
+	related = (res.entries ?? []).filter((p: any) => p.id !== product.id).slice(0, 3);
+} catch {
+	related = [];
+}
+
+const cartItem = {
+	id: product.id,
+	name: data.name,
+	price: data.price,
+	image: data.image?.src ?? "",
+};
+
+// Approved reviews live in the Sella plugin (raw EmDash + plugin =
+// full store). Submissions land in the moderation queue until approved.
+let reviews: any[] = [];
+let avgRating = 0;
+let reviewCount = 0;
+try {
+	const [listRes, sumRes] = await Promise.all([
+		fetch(`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/list?productSlug=${slug}`).then((r) => r.json()).catch(() => null),
+		fetch(`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/summary?productSlug=${slug}`).then((r) => r.json()).catch(() => null),
+	]);
+	if (listRes?.success && Array.isArray(listRes.data?.items)) reviews = listRes.data.items;
+	if (sumRes?.success && sumRes.data) {
+		reviewCount = Number(sumRes.data.count) || 0;
+		avgRating = Number(sumRes.data.average) || 0;
+	}
+} catch {
+	reviews = [];
+}
+---
+
+<Base
+	title={seo?.title || data.name}
+	pageTitle={data.name}
+	description={seo?.description}
+	image={seo?.ogImage}
+	canonical={seo?.canonical}
+	robots={seo?.robots}
+	content={{ collection: "products", id: data.id, slug: product.id }}
+>
+	<section class="container section product">
+		<a href="/shop" class="back-link">← Back to shop</a>
+		<div class="product-layout">
+			<div class="product-gallery" {...product.edit.image}>
+				{data.image ? (
+					<Image image={data.image} />
+				) : (
+					<div class="gallery-fallback" aria-hidden="true" />
+				)}
+				{data.badge && <span class="product-badge">{data.badge}</span>}
+			</div>
+
+			<div class="product-buy">
+				<h1 {...product.edit.name}>{data.name}</h1>
+				{data.sku && <p class="sku">SKU {data.sku}</p>}
+				<p class="price">
+					{"$" + Number(data.price).toFixed(2)}
+					{onSale && (
+						<s class="compare">{"$" + Number(data.compare_at_price).toFixed(2)}</s>
+					)}
+					{onSale && <span class="save-tag">Save {"$" + (Number(data.compare_at_price) - Number(data.price)).toFixed(2)}</span>}
+				</p>
+				{data.short_description && (
+					<p class="short" {...product.edit.short_description}>{data.short_description}</p>
+				)}
+
+				<p class="stock" data-stock={soldOut ? "out" : lowStock ? "low" : "in"}>
+					{soldOut ? "Out of stock" : lowStock ? `Only ${stock} left in stock` : "In stock — ships within 24h"}
+				</p>
+
+				<form id="atc-form" class="atc">
+					<label class="qty">
+						Qty
+						<input type="number" name="qty" value="1" min="1" max="99" disabled={soldOut} />
+					</label>
+					<button class="btn btn-primary btn-lg" type="submit" disabled={soldOut}>
+						{soldOut ? "Sold out" : "Add to cart"}
+					</button>
+				</form>
+				<p class="atc-note" id="atc-note" hidden>
+					Added to cart ✓ <a href="/cart">View cart →</a>
+				</p>
+
+				<ul class="assurances">
+					<li>Free shipping over $75</li>
+					<li>Free 60-day returns</li>
+					<li>2-year warranty</li>
+				</ul>
+			</div>
+		</div>
+
+		{
+			data.description && (
+				<div class="product-description">
+					<h2>Details</h2>
+					<PortableText value={data.description} />
+				</div>
+			)
+		}
+
+		<div class="reviews" id="reviews">
+			<h2>
+				Reviews
+				{
+					reviewCount > 0 && (
+						<span class="avg">
+							{[1, 2, 3, 4, 5].map((i) => (
+								<span class:list={["star", { on: i <= Math.round(avgRating) }]}>★</span>
+							))}
+							<span class="avg-num">
+								{avgRating.toFixed(1)} · {reviewCount} review{reviewCount === 1 ? "" : "s"}
+							</span>
+						</span>
+					)
+				}
+			</h2>
+			{
+				reviews.length === 0 ? (
+					<p class="muted">No reviews yet — be the first to write one.</p>
+				) : (
+					<div class="review-list">
+						{reviews.map((r: any) => (
+							<article class="review">
+								<div class="review-stars" aria-label={`${r.rating} out of 5 stars`}>
+									{[1, 2, 3, 4, 5].map((i) => (
+										<span class:list={["star", { on: i <= Number(r.rating) }]}>★</span>
+									))}
+								</div>
+								{r.title && <h3>{r.title}</h3>}
+								<p>{r.body}</p>
+								<footer>— {r.author}</footer>
+							</article>
+						))}
+					</div>
+				)
+			}
+			<form id="review-form" class="review-form">
+				<h3>Write a review</h3>
+				<div class="row">
+					<label>
+						Rating
+						<select name="rating" required>
+							<option value="5">★★★★★ — Love it</option>
+							<option value="4">★★★★ — Great</option>
+							<option value="3">★★★ — Good</option>
+							<option value="2">★★ — Okay</option>
+							<option value="1">★ — Poor</option>
+						</select>
+					</label>
+					<label>
+						Your name
+						<input type="text" name="author" required maxlength="80" autocomplete="name" />
+					</label>
+				</div>
+				<label>
+					Headline (optional)
+					<input type="text" name="title" maxlength="140" />
+				</label>
+				<label>
+					Review
+					<textarea name="body" rows="4" required minlength="10" maxlength="2000" />
+				</label>
+				<label class="hp" aria-hidden="true">
+					Company
+					<input type="text" name="company" tabindex="-1" autocomplete="off" />
+				</label>
+				<p class="form-msg" id="review-msg" aria-live="polite"></p>
+				<button class="btn btn-secondary" type="submit">Submit review</button>
+			</form>
+		</div>
+
+		{
+			related.length > 0 && (
+				<div class="related">
+					<h2>You may also like</h2>
+					<div class="product-grid">
+						{related.map((p) => (
+							<ProductCard product={p} />
+						))}
+					</div>
+				</div>
+			)
+		}
+	</section>
+</Base>
+
+<script is:inline define:vars={{ cartItem }}>
+document.addEventListener("DOMContentLoaded", function () {
+	var form = document.getElementById("atc-form");
+	if (!form) return;
+	form.addEventListener("submit", function (e) {
+		e.preventDefault();
+		var qtyInput = form.querySelector('input[name="qty"]');
+		var qty = Math.max(1, parseInt(qtyInput ? qtyInput.value : "1", 10) || 1);
+		if (window.NWCart) window.NWCart.add(cartItem, qty);
+		var note = document.getElementById("atc-note");
+		if (note) note.removeAttribute("hidden");
+	});
+});
+</script>
+
+<script is:inline define:vars={{ productSlug: slug }}>
+document.addEventListener("DOMContentLoaded", function () {
+	var form = document.getElementById("review-form");
+	var msg = document.getElementById("review-msg");
+	if (!form || !msg) return;
+	form.addEventListener("submit", function (e) {
+		e.preventDefault();
+		var data = new FormData(form);
+		msg.textContent = "Submitting…";
+		msg.className = "form-msg";
+		fetch("/_emdash/api/plugins/sella/reviews/submit", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				product_slug: productSlug,
+				rating: Number(data.get("rating")),
+				title: data.get("title"),
+				body: data.get("body"),
+				author: data.get("author"),
+				company: data.get("company"),
+			}),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { status: r.status, body: j };
+				});
+			})
+			.then(function (res) {
+				if (res.body && res.body.success && res.body.data && res.body.data.received) {
+					msg.textContent = "Thanks! Your review is awaiting moderation and will appear once approved.";
+					msg.className = "form-msg ok";
+					form.reset();
+				} else {
+					msg.textContent = (res.body && res.body.data && res.body.data.error && res.body.data.error.message) || (res.body && res.body.error && res.body.error.message) || "Couldn't submit. Try again.";
+					msg.className = "form-msg bad";
+				}
+			})
+			.catch(function () {
+				msg.textContent = "Couldn't submit. Check your connection.";
+				msg.className = "form-msg bad";
+			});
+	});
+});
+</script>
+
+<style>
+	.back-link {
+		display: inline-block;
+		margin-bottom: var(--spacing-xl);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--color-muted);
+	}
+
+	.back-link:hover {
+		color: var(--color-text);
+	}
+
+	.product-layout {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--spacing-4xl);
+		align-items: start;
+	}
+
+	.product-gallery {
+		position: relative;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		background: var(--color-surface);
+	}
+
+	.product-gallery :global(img) {
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+
+	.gallery-fallback {
+		aspect-ratio: 4 / 3;
+		background: var(--gradient-brand-soft);
+		opacity: 0.4;
+	}
+
+	.product-badge {
+		position: absolute;
+		top: var(--spacing-md);
+		left: var(--spacing-md);
+		padding: 2px var(--spacing-md);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-on-brand);
+		background: var(--gradient-brand-strong);
+		border-radius: var(--radius-full);
+	}
+
+	.product-buy h1 {
+		font-size: var(--font-size-4xl);
+		letter-spacing: var(--tracking-tight);
+	}
+
+	.sku {
+		margin-top: var(--spacing-xs);
+		font-size: var(--font-size-xs);
+		color: var(--color-muted);
+		letter-spacing: 0.06em;
+	}
+
+	.price {
+		margin-top: var(--spacing-md);
+		font-size: var(--font-size-3xl);
+		font-weight: 800;
+		letter-spacing: var(--tracking-tight);
+	}
+
+	.compare {
+		margin-left: var(--spacing-sm);
+		font-size: var(--font-size-lg);
+		font-weight: 400;
+		color: var(--color-muted);
+	}
+
+	.save-tag {
+		margin-left: var(--spacing-sm);
+		padding: 2px var(--spacing-sm);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: var(--color-on-brand);
+		background: var(--color-success);
+		border-radius: var(--radius-full);
+		vertical-align: middle;
+	}
+
+	.short {
+		margin-top: var(--spacing-md);
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+	}
+
+	.stock {
+		margin-top: var(--spacing-md);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
+	.stock[data-stock="in"] {
+		color: var(--color-success);
+	}
+
+	.stock[data-stock="low"] {
+		color: var(--color-warning);
+	}
+
+	.stock[data-stock="out"] {
+		color: var(--color-danger);
+	}
+
+	.atc {
+		display: flex;
+		gap: var(--spacing-md);
+		align-items: end;
+		margin-top: var(--spacing-lg);
+	}
+
+	.qty {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
+	.qty input {
+		width: 84px;
+		padding: var(--spacing-sm) var(--spacing-md);
+		font: inherit;
+		color: var(--color-text);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+	}
+
+	.atc-note {
+		margin-top: var(--spacing-md);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--color-success);
+	}
+
+	.assurances {
+		margin-top: var(--spacing-xl);
+		padding-top: var(--spacing-lg);
+		border-top: 1px solid var(--color-border);
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.assurances li::before {
+		content: "✓ ";
+		color: var(--color-success);
+		font-weight: 700;
+	}
+
+	.product-description {
+		max-width: var(--max-width);
+		margin: var(--spacing-4xl) auto 0;
+	}
+
+	.product-description h2 {
+		margin-bottom: var(--spacing-md);
+	}
+
+	.related {
+		margin-top: var(--spacing-4xl);
+	}
+
+	.related h2 {
+		margin-bottom: var(--spacing-xl);
+		text-align: center;
+	}
+
+	.product-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--spacing-xl);
+	}
+
+	@media (max-width: 900px) {
+		.product-layout {
+			grid-template-columns: 1fr;
+		}
+
+		.product-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.product-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.reviews {
+		max-width: var(--max-width);
+		margin: var(--spacing-4xl) auto 0;
+	}
+
+	.reviews h2 {
+		margin-bottom: var(--spacing-lg);
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-md);
+		flex-wrap: wrap;
+	}
+
+	.avg {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		font-size: var(--font-size-lg);
+	}
+
+	.avg-num {
+		margin-left: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		font-weight: 400;
+		color: var(--color-muted);
+	}
+
+	.star {
+		color: var(--color-border);
+	}
+
+	.star.on {
+		color: var(--color-warning);
+	}
+
+	.muted {
+		color: var(--color-muted);
+	}
+
+	.review-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+	}
+
+	.review {
+		padding: var(--spacing-lg);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+	}
+
+	.review-stars {
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.review h3 {
+		font-size: var(--font-size-base);
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.review p {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.review footer {
+		margin-top: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
+	.review-form {
+		margin-top: var(--spacing-2xl);
+		padding: var(--spacing-xl);
+		border: 1px dashed var(--color-border);
+		border-radius: var(--radius-lg);
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+	}
+
+	.review-form h3 {
+		font-size: var(--font-size-lg);
+	}
+
+	.review-form .row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--spacing-md);
+	}
+
+	.review-form label {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
+	.review-form input,
+	.review-form select,
+	.review-form textarea {
+		padding: var(--spacing-sm) var(--spacing-md);
+		font: inherit;
+		font-weight: 400;
+		color: var(--color-text);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+	}
+
+	.review-form .hp {
+		position: absolute;
+		left: -9999px;
+	}
+
+	.form-msg {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.form-msg.ok {
+		color: var(--color-success);
+	}
+
+	.form-msg.bad {
+		color: var(--color-danger);
+	}
+</style>

@@ -1,0 +1,429 @@
+---
+import Base from "../layouts/Base.astro";
+
+// Real checkout, plugin-backed: collects contact + shipping, applies a coupon,
+// then POSTs to the Sella plugin — the server re-prices from CMS truth and
+// returns a Stripe URL (or manual instructions). Raw EmDash + plugin = store.
+---
+
+<Base title="Checkout" description="Secure checkout. Pay by card via Stripe.">
+	<section class="container section checkout">
+		<h1>Checkout</h1>
+		<div id="cancelled-note" class="cancelled" hidden>
+			Your payment was cancelled — nothing was charged. Your cart is intact.
+		</div>
+		<div class="checkout-layout">
+			<form id="order-form" class="order-form">
+				<h2>Contact & shipping</h2>
+				<label>Email<input type="email" name="email" required autocomplete="email" /></label>
+				<div class="row">
+					<label>First name<input type="text" name="first" required autocomplete="given-name" /></label>
+					<label>Last name<input type="text" name="last" required autocomplete="family-name" /></label>
+				</div>
+				<label>Address<input type="text" name="address" required autocomplete="street-address" /></label>
+				<div class="row">
+					<label>City<input type="text" name="city" required autocomplete="address-level2" /></label>
+					<label>ZIP<input type="text" name="zip" required autocomplete="postal-code" /></label>
+				</div>
+				<label>
+					Order notes (optional)
+					<textarea name="notes" rows="3" placeholder="Delivery instructions, gift message…"></textarea>
+				</label>
+
+				<div class="coupon-box">
+					<label>
+						Coupon code
+						<div class="coupon-row">
+							<input type="text" name="coupon" id="coupon-input" placeholder="WELCOME10" autocomplete="off" />
+							<button type="button" class="btn btn-secondary" id="coupon-apply">Apply</button>
+						</div>
+					</label>
+					<p class="coupon-msg" id="coupon-msg" aria-live="polite"></p>
+				</div>
+
+				<fieldset class="pay-methods">
+					<legend>Payment method</legend>
+					<label class="pay-option">
+						<input type="radio" name="provider" value="stripe" checked />
+						<span><strong>Card</strong> — secure checkout via Stripe</span>
+					</label>
+					<label class="pay-option">
+						<input type="radio" name="provider" value="manual" />
+						<span><strong>Manual</strong> — bank transfer / cash on delivery</span>
+					</label>
+				</fieldset>
+
+				<p class="form-error" id="form-error" role="alert" hidden></p>
+				<button class="btn btn-primary btn-lg" type="submit" id="pay-btn">Continue to payment →</button>
+				<p class="secure-note">🔒 Final totals confirmed server-side before payment.</p>
+			</form>
+			<aside class="summary">
+				<h2>Order summary</h2>
+				<div id="summary-root"><p class="loading">Loading…</p></div>
+			</aside>
+		</div>
+	</section>
+</Base>
+
+<script is:inline>
+document.addEventListener("DOMContentLoaded", function () {
+	var summaryRoot = document.getElementById("summary-root");
+	var form = document.getElementById("order-form");
+	var payBtn = document.getElementById("pay-btn");
+	var errBox = document.getElementById("form-error");
+	var couponInput = document.getElementById("coupon-input");
+	var couponApply = document.getElementById("coupon-apply");
+	var couponMsg = document.getElementById("coupon-msg");
+	if (!summaryRoot || !form || !window.NWCart) return;
+	var Cart = window.NWCart;
+	var COUPON_KEY = "sella_coupon";
+
+	if (new URLSearchParams(location.search).get("cancelled") === "1") {
+		var note = document.getElementById("cancelled-note");
+		if (note) note.removeAttribute("hidden");
+	}
+
+	function esc(s) {
+		return String(s).replace(/[&<>"]/g, function (c) {
+			return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+		});
+	}
+	function getCoupon() {
+		try {
+			return JSON.parse(localStorage.getItem(COUPON_KEY)) || null;
+		} catch (e) {
+			return null;
+		}
+	}
+	function money(n) {
+		return "$" + Number(n).toFixed(2);
+	}
+	// Client-side estimate only — the server re-prices everything.
+	function estimate() {
+		var items = Cart.items();
+		var subtotal = items.reduce(function (n, i) {
+			return n + i.price * i.qty;
+		}, 0);
+		var coupon = getCoupon();
+		var discount = 0;
+		if (coupon) {
+			discount =
+				coupon.kind === "percent"
+					? Math.min(subtotal, (subtotal * coupon.value) / 100)
+					: Math.min(subtotal, coupon.value);
+		}
+		var shipping = items.length === 0 ? 0 : subtotal - discount >= 75 ? 0 : 6.95;
+		return { items: items, subtotal: subtotal, discount: discount, shipping: shipping, total: subtotal - discount + shipping };
+	}
+
+	function renderSummary() {
+		var e = estimate();
+		if (e.items.length === 0) {
+			summaryRoot.innerHTML = '<p>Your cart is empty. <a href="/shop">Shop the collection →</a></p>';
+			return;
+		}
+		var rows = e.items
+			.map(function (i) {
+				return '<div class="sum-row"><span>' + esc(i.name) + " × " + i.qty + "</span><strong>" + money(i.price * i.qty) + "</strong></div>";
+			})
+			.join("");
+		summaryRoot.innerHTML =
+			rows +
+			'<div class="sum-row"><span>Subtotal</span><strong>' +
+			money(e.subtotal) +
+			"</strong></div>" +
+			(e.discount > 0
+				? '<div class="sum-row discount"><span>Discount</span><strong>−' + money(e.discount) + "</strong></div>"
+				: "") +
+			'<div class="sum-row"><span>Shipping</span><strong>' +
+			(e.shipping === 0 ? "Free" : money(e.shipping)) +
+			"</strong></div>" +
+			'<div class="sum-total"><span>Total</span><strong>' +
+			money(e.total) +
+			"</strong></div>";
+	}
+
+	function showError(msg) {
+		errBox.textContent = msg;
+		errBox.removeAttribute("hidden");
+		payBtn.removeAttribute("disabled");
+		payBtn.textContent = "Continue to payment →";
+	}
+
+	if (couponApply) {
+		couponApply.addEventListener("click", function () {
+			var code = couponInput.value.trim();
+			if (!code) return;
+			couponMsg.textContent = "Checking…";
+			var e = estimate();
+			fetch("/_emdash/api/plugins/sella/coupons/validate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ code: code, subtotal: e.subtotal }),
+			})
+				.then(function (r) {
+					return r.json();
+				})
+				.then(function (j) {
+					j = (j && j.data) || j;
+					if (j.valid) {
+						localStorage.setItem(COUPON_KEY, JSON.stringify({ code: j.code, kind: j.kind, value: j.value }));
+						couponMsg.textContent = "✓ " + j.code + " applied — " + j.discountLabel + " off.";
+						couponMsg.className = "coupon-msg ok";
+					} else {
+						localStorage.removeItem(COUPON_KEY);
+						couponMsg.textContent = j.reason || "Invalid code.";
+						couponMsg.className = "coupon-msg bad";
+					}
+					renderSummary();
+				})
+				.catch(function () {
+					couponMsg.textContent = "Couldn't check that code — try again.";
+					couponMsg.className = "coupon-msg bad";
+				});
+		});
+	}
+	var saved = getCoupon();
+	if (saved && couponInput) couponInput.value = saved.code || "";
+
+	form.addEventListener("submit", function (ev) {
+		ev.preventDefault();
+		errBox.setAttribute("hidden", "");
+		var items = Cart.items();
+		if (items.length === 0) {
+			showError("Your cart is empty.");
+			return;
+		}
+		payBtn.setAttribute("disabled", "");
+		payBtn.textContent = "Creating secure checkout…";
+		var data = new FormData(form);
+		var coupon = getCoupon();
+		var providerEl = form.querySelector('input[name="provider"]:checked');
+		var provider = (providerEl && providerEl.value) || "stripe";
+		fetch("/_emdash/api/plugins/sella/checkout", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				provider: provider,
+				email: data.get("email"),
+				name: ((data.get("first") || "") + " " + (data.get("last") || "")).trim(),
+				items: items.map(function (i) {
+					return { slug: i.id, qty: i.qty };
+				}),
+				coupon: coupon ? coupon.code : "",
+				address: {
+					name: (data.get("first") || "") + " " + (data.get("last") || ""),
+					line1: data.get("address"),
+					city: data.get("city"),
+					zip: data.get("zip"),
+				},
+				notes: data.get("notes"),
+			}),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { status: r.status, body: j };
+				});
+			})
+			.then(function (res) {
+				var body = (res.body && res.body.data) || res.body || {};
+				if (body.url) {
+					if (body.problems && body.problems.length) {
+						alert(body.problems.join("\n"));
+					}
+					try {
+						localStorage.setItem("sella_email", String(data.get("email") || ""));
+					} catch (e) {}
+					window.location.href = body.url;
+					return;
+				}
+				if (body.instructions && body.orderNumber) {
+					try {
+						localStorage.setItem("sella_email", String(data.get("email") || ""));
+						localStorage.removeItem("sella_coupon");
+					} catch (e) {}
+					window.location.href = "/thank-you?order=" + encodeURIComponent(body.orderNumber);
+					return;
+				}
+				showError((body.error && body.error.message) || "Checkout failed. Try again.");
+			})
+			.catch(function () {
+				showError("Couldn't reach checkout. Check your connection and try again.");
+			});
+	});
+
+	document.addEventListener("nw:cart-updated", renderSummary);
+	renderSummary();
+});
+</script>
+
+<style>
+	.checkout h1 {
+		letter-spacing: var(--tracking-tight);
+	}
+
+	.cancelled {
+		margin-bottom: var(--spacing-xl);
+		padding: var(--spacing-md) var(--spacing-lg);
+		font-size: var(--font-size-sm);
+		background: var(--color-surface);
+		border: 1px solid var(--color-warning);
+		border-radius: var(--radius);
+	}
+
+	.checkout-layout {
+		display: grid;
+		grid-template-columns: 1fr 360px;
+		gap: var(--spacing-4xl);
+		margin-top: var(--spacing-xl);
+		align-items: start;
+	}
+
+	.order-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+	}
+
+	.order-form h2,
+	.summary h2 {
+		font-size: var(--font-size-xl);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.order-form label {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
+	.row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--spacing-md);
+	}
+
+	.order-form input,
+	.order-form textarea {
+		padding: var(--spacing-sm) var(--spacing-md);
+		font: inherit;
+		font-weight: 400;
+		color: var(--color-text);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+	}
+
+	.coupon-box {
+		padding: var(--spacing-md);
+		background: var(--color-surface);
+		border: 1px dashed var(--color-border);
+		border-radius: var(--radius);
+	}
+
+	.pay-methods {
+		border: 1px dashed var(--color-border);
+		border-radius: var(--radius);
+		padding: var(--spacing-md);
+		display: grid;
+		gap: var(--spacing-sm);
+	}
+
+	.pay-methods legend {
+		padding: 0 var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+	}
+
+	.pay-option {
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: flex-start;
+		gap: var(--spacing-sm);
+		font-weight: 400 !important;
+		cursor: pointer;
+	}
+
+	.pay-option input {
+		margin-top: 4px;
+	}
+
+	.coupon-row {
+		display: flex;
+		gap: var(--spacing-sm);
+	}
+
+	.coupon-row input {
+		flex: 1;
+		text-transform: uppercase;
+	}
+
+	.coupon-msg {
+		margin-top: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.coupon-msg.ok {
+		color: var(--color-success);
+	}
+
+	.coupon-msg.bad {
+		color: var(--color-danger);
+	}
+
+	.form-error {
+		padding: var(--spacing-md);
+		font-size: var(--font-size-sm);
+		color: var(--color-danger);
+		background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+		border: 1px solid var(--color-danger);
+		border-radius: var(--radius);
+	}
+
+	.secure-note {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.summary {
+		padding: var(--spacing-xl);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		position: sticky;
+		top: 90px;
+	}
+
+	.sum-row {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--spacing-md);
+		padding: var(--spacing-sm) 0;
+		font-size: var(--font-size-sm);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.sum-row.discount strong {
+		color: var(--color-success);
+	}
+
+	.sum-total {
+		display: flex;
+		justify-content: space-between;
+		padding-top: var(--spacing-md);
+		font-size: var(--font-size-lg);
+	}
+
+	@media (max-width: 900px) {
+		.checkout-layout {
+			grid-template-columns: 1fr;
+		}
+
+		.summary {
+			position: static;
+		}
+	}
+</style>

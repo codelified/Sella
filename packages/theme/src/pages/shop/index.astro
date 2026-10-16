@@ -1,0 +1,166 @@
+---
+import { getEmDashCollection, getTaxonomyTerms } from "emdash";
+import Base from "../../layouts/Base.astro";
+import ProductCard from "../../components/ProductCard.astro";
+
+const activeCategory = Astro.url.searchParams.get("category") ?? undefined;
+
+// Category chips come from the CMS taxonomy; fall back to the template's
+// fixed set if the taxonomy is ever empty (e.g. pre-setup).
+const FALLBACK_CATS = [
+	{ slug: "wear", label: "Wear" },
+	{ slug: "tech", label: "Tech" },
+	{ slug: "carry", label: "Carry" },
+	{ slug: "home", label: "Home" },
+];
+let categories = FALLBACK_CATS;
+try {
+	const res: any = await getTaxonomyTerms("category");
+	const list = Array.isArray(res) ? res : (res?.data ?? res?.terms ?? []);
+	if (list.length > 0) {
+		categories = list.map((t: any) => ({ slug: String(t.slug), label: String(t.label ?? t.slug) }));
+	}
+} catch {
+	// keep fallback
+}
+
+let products: any[] = [];
+try {
+	const res = await getEmDashCollection("products", {
+		status: "published",
+		...(activeCategory ? { where: { category: activeCategory } } : {}),
+		orderBy: { created_at: "desc" },
+		limit: 48,
+	});
+	products = res.entries ?? [];
+	if (Astro.cache?.enabled) Astro.cache.set(res.cacheHint);
+} catch {
+	products = [];
+}
+
+const activeLabel = activeCategory
+	? (categories.find((c) => c.slug === activeCategory)?.label ?? activeCategory)
+	: "Everything";
+---
+
+<Base
+	title={activeCategory ? `${activeLabel} — Shop` : "Shop all products"}
+	description="Shop everyday carry and outdoor goods. Free shipping over $75, 60-day returns, 2-year warranty."
+>
+	<section class="container section shop">
+		<header class="section-header">
+			<p class="shop-eyebrow">Northwind Supply Co.</p>
+			<h1 class="section-headline">Shop {activeCategory ? activeLabel : "everything"}</h1>
+			<p class="section-subheadline">
+				Free shipping over $75 · 60-day returns · 2-year warranty
+			</p>
+		</header>
+
+		<nav class="cat-chips" aria-label="Filter by category">
+			<a href="/shop" class:list={["chip", { active: !activeCategory }]}>All</a>
+			{
+				categories.map((c) => (
+					<a
+						href={`/shop?category=${c.slug}`}
+						class:list={["chip", { active: activeCategory === c.slug }]}>
+						{c.label}
+					</a>
+				))
+			}
+		</nav>
+
+		{
+			products.length === 0 ? (
+				<div class="empty-state">
+					<h2>No products here yet</h2>
+					<p>
+						{activeCategory
+							? "Nothing in this category right now — try another one."
+							: "Add products in the admin: Content → Products → New."}
+					</p>
+					{!activeCategory && Astro.locals.user && (
+						<a href="/_emdash/admin" class="btn btn-primary">
+							Open Admin
+						</a>
+					)}
+				</div>
+			) : (
+				<div class="product-grid">
+					{products.map((p) => (
+						<ProductCard product={p} />
+					))}
+				</div>
+			)
+		}
+	</section>
+</Base>
+
+<style>
+	.shop-eyebrow {
+		margin-bottom: var(--spacing-sm);
+		color: var(--color-brand);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.cat-chips {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--spacing-sm);
+		margin-bottom: var(--spacing-2xl);
+	}
+
+	.chip {
+		padding: var(--spacing-xs) var(--spacing-lg);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--color-muted);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-full);
+		transition: all var(--transition-fast);
+	}
+
+	.chip:hover {
+		color: var(--color-text);
+		border-color: var(--color-text);
+	}
+
+	.chip.active {
+		color: var(--color-on-brand);
+		background: var(--gradient-brand-strong);
+		border-color: transparent;
+	}
+
+	.product-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--spacing-xl);
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: var(--spacing-4xl) var(--spacing-lg);
+		max-width: var(--max-width);
+		margin: 0 auto;
+	}
+
+	.empty-state p {
+		color: var(--color-muted);
+		margin: var(--spacing-md) 0 var(--spacing-xl);
+	}
+
+	@media (max-width: 900px) {
+		.product-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.product-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

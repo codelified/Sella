@@ -1,0 +1,187 @@
+---
+import { getEmDashCollection, getEmDashEntry, getSeoMeta } from "emdash";
+import Base from "../layouts/Base.astro";
+import MarketingBlocks from "../components/MarketingBlocks.astro";
+import ProductCard from "../components/ProductCard.astro";
+
+const { entry: page, cacheHint } = await getEmDashEntry("pages", "home");
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const pageTitle = page?.data.title;
+const pageContent = page?.data.content;
+const seo = page
+	? getSeoMeta(page, {
+			siteUrl: Astro.url.origin,
+			path: "/",
+			defaultDescription:
+				"Northwind Supply Co. — everyday carry & outdoor goods built to last.",
+		})
+	: null;
+
+// Featured products for the homepage rail. Filter in code (not `where`) so
+// the section degrades gracefully if the flag is ever unset on all products.
+let featured: any[] = [];
+try {
+	const res = await getEmDashCollection("products", {
+		status: "published",
+		limit: 12,
+	});
+	featured = (res.entries ?? []).filter((p: any) => p?.data?.featured).slice(0, 3);
+	if (Astro.cache?.enabled) Astro.cache.set(res.cacheHint);
+} catch {
+	featured = [];
+}
+---
+
+<Base
+	title={seo?.title !== "Home" ? seo?.title : undefined}
+	pageTitle={pageTitle}
+	description={seo?.description}
+	image={seo?.ogImage}
+	canonical={seo?.canonical}
+	robots={seo?.robots}
+	content={page ? { collection: "pages", id: page.data.id, slug: page.id } : undefined}
+>
+	{
+		page && pageContent ? (
+			<div {...page.edit.content}>
+				<MarketingBlocks value={pageContent} />
+			</div>
+		) : (
+			<div class="empty-state">
+				<h1>Northwind Supply Co.</h1>
+				<p>Complete setup in the admin to stock the shelves.</p>
+					{Astro.locals.user && (
+						<a href="/_emdash/admin" class="btn btn-primary">
+							Open Admin
+						</a>
+					)}
+			</div>
+		)
+	}
+	{
+		featured.length > 0 && (
+			<section class="container section featured">
+				<div class="marquee" aria-hidden="true">
+					<div class="marquee-track">
+						<span>Free shipping over $75 ✦ 60-day returns ✦ 2-year warranty ✦ Carbon-neutral delivery ✦ Designed to be repaired ✦&nbsp;</span>
+						<span>Free shipping over $75 ✦ 60-day returns ✦ 2-year warranty ✦ Carbon-neutral delivery ✦ Designed to be repaired ✦&nbsp;</span>
+					</div>
+				</div>
+				<header class="section-header">
+					<p class="section-kicker">01 — Bestsellers</p>
+					<h2 class="section-headline">Restocked &amp; ready</h2>
+					<p class="section-subheadline">
+						The three products our customers rebuy and recommend most.
+					</p>
+				</header>
+				<div class="product-grid">
+					{featured.map((p) => (
+						<ProductCard product={p} />
+					))}
+				</div>
+				<div class="featured-cta">
+					<a href="/shop" class="btn btn-primary btn-lg">
+						Shop the full collection →
+					</a>
+				</div>
+			</section>
+		)
+	}
+</Base>
+
+<style>
+	.featured {
+		padding-top: 0;
+	}
+
+	.section-kicker {
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-brand);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.section-headline {
+		font-family: var(--font-display);
+		font-weight: 600;
+		letter-spacing: -0.02em;
+	}
+
+	.marquee {
+		overflow: hidden;
+		white-space: nowrap;
+		margin-bottom: var(--spacing-4xl);
+		padding: var(--spacing-md) 0;
+		border-top: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.marquee-track {
+		display: inline-flex;
+		animation: marquee 28s linear infinite;
+	}
+
+	.marquee-track span {
+		font-family: var(--font-display);
+		font-size: var(--font-size-lg);
+		font-style: italic;
+		color: var(--color-muted);
+		padding-right: var(--spacing-md);
+	}
+
+	@keyframes marquee {
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.marquee-track {
+			animation: none;
+		}
+	}
+
+	.product-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--spacing-xl);
+	}
+
+	.featured-cta {
+		text-align: center;
+		margin-top: var(--spacing-2xl);
+	}
+
+	@media (max-width: 900px) {
+		.product-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.product-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+<style>
+	.empty-state {
+		text-align: center;
+		padding: var(--spacing-5xl) var(--spacing-lg);
+		max-width: var(--max-width);
+		margin: 0 auto;
+	}
+
+	.empty-state h1 {
+		margin-bottom: var(--spacing-md);
+	}
+
+	.empty-state p {
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-xl);
+	}
+</style>

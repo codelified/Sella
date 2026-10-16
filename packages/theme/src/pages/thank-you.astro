@@ -1,0 +1,144 @@
+---
+import Base from "../layouts/Base.astro";
+
+// Order confirmation, plugin-backed. Stripe: polls by-session until the
+// webhook marks the order paid. Manual: looks up via email + order number
+// (email saved at checkout) and shows the merchant instructions.
+---
+
+<Base title="Thank you" description="Your order is confirmed.">
+	<section class="container section thanks">
+		<div id="thanks-root">
+			<h1>Checking your payment…</h1>
+			<p class="muted">Confirming your order. This takes a few seconds.</p>
+		</div>
+	</section>
+</Base>
+
+<script is:inline>
+document.addEventListener("DOMContentLoaded", function () {
+	var root = document.getElementById("thanks-root");
+	if (!root) return;
+	var params = new URLSearchParams(location.search);
+	var sessionId = params.get("session_id");
+	var orderNumber = params.get("order");
+	function esc(s) {
+		return String(s).replace(/[&<>"]/g, function (c) {
+			return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+		});
+	}
+	function done() {
+		try {
+			localStorage.removeItem("sella_coupon");
+		} catch (e) {}
+		if (window.NWCart) window.NWCart.clear();
+	}
+	function show(title, sub) {
+		root.innerHTML = "<h1>" + title + "</h1><p class='muted'>" + sub + "</p><a href='/shop' class='btn btn-primary'>Keep shopping</a>";
+	}
+
+	// ---- Manual orders: email + order number lookup ----
+	if (!sessionId && orderNumber) {
+		var email = "";
+		try {
+			email = localStorage.getItem("sella_email") || "";
+		} catch (e) {}
+		if (!email) {
+			show("Order received ✓", "Order <strong>" + esc(orderNumber) + "</strong> is recorded. Follow the payment instructions from checkout to complete it.");
+			return;
+		}
+		fetch("/_emdash/api/plugins/sella/customers/lookup", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email: email, orderNumber: orderNumber }),
+		})
+			.then(function (r) {
+				return r.json();
+			})
+			.then(function (j) {
+				var o = (j && j.data) || j || {};
+				if (o.found) {
+					show(
+						"Thank you — order received ✓",
+						"Order <strong>" + esc(o.orderNumber) + "</strong> (" + o.itemCount + " items, " + esc(o.totalLabel || "") + ") is recorded. Complete your manual payment per the checkout instructions — we'll confirm by email.",
+					);
+					done();
+				} else {
+					show("Order received ✓", "Order <strong>" + esc(orderNumber) + "</strong> is recorded. Follow the payment instructions from checkout to complete it.");
+				}
+			})
+			.catch(function () {
+				show("Order received ✓", "Order <strong>" + esc(orderNumber) + "</strong> is recorded.");
+			});
+		return;
+	}
+
+	if (!sessionId) {
+		show("No order found", "Missing checkout session. <a href='/shop'>Back to shop →</a>");
+		return;
+	}
+	var attempts = 0;
+	function poll() {
+		attempts++;
+		fetch("/_emdash/api/plugins/sella/orders/by-session", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ sessionId: sessionId }),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { status: r.status, body: (j && j.data) || j };
+				});
+			})
+			.then(function (res) {
+				var o = res.body;
+				if (!o.found) {
+					if (attempts < 6) {
+						setTimeout(poll, 2500);
+						return;
+					}
+					show("Order received ✓", "Your payment went through — the confirmation is still being recorded. A receipt is on its way to your email.");
+					if (window.NWCart) window.NWCart.clear();
+					return;
+				}
+				if (o.status === "paid" || o.status === "fulfilled") {
+					show(
+						"Thank you — order confirmed ✓",
+						"Order <strong>" + esc(o.orderNumber) + "</strong> (" + o.itemCount + " items, " + esc(o.totalLabel) + ") is confirmed. Receipt sent to " + esc(o.email) + ".",
+					);
+					done();
+				} else if (o.status === "payment_failed") {
+					show("Payment didn't go through", "Nothing was charged. <a href='/checkout'>Try checkout again →</a>");
+				} else {
+					show("Order received ✓", "Order <strong>" + esc(o.orderNumber) + "</strong> is recorded and awaiting payment confirmation.");
+					if (attempts < 6) setTimeout(poll, 3000);
+				}
+			})
+			.catch(function () {
+				if (attempts < 6) setTimeout(poll, 3000);
+				else show("Order received ✓", "Confirmation is delayed — check your email for the receipt.");
+			});
+	}
+	poll();
+});
+</script>
+
+<style>
+	.thanks {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		text-align: center;
+		padding-top: var(--spacing-5xl);
+		padding-bottom: var(--spacing-5xl);
+	}
+
+	.thanks h1 {
+		letter-spacing: var(--tracking-tight);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.muted {
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-xl);
+	}
+</style>
