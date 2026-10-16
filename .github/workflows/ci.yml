@@ -14,9 +14,6 @@ permissions:
 jobs:
   core:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/core
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,10 +23,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: packages/core/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm build
+      - run: pnpm --filter @sella/core typecheck
+      - run: pnpm --filter @sella/core build
 
   theme:
     runs-on: ubuntu-latest
