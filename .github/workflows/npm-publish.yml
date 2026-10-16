@@ -1,0 +1,44 @@
+# Publish @sella/* to npm on GitHub Release.
+#
+# Setup (one time, on npmjs.com):
+#   1. Create the `sella` org (free, public packages).
+#   2. For EACH package (core, theme, create): package Settings →
+#      Publishing → manage trusted publishers → add this repo.
+# No tokens, no secrets in this file — OIDC does the auth.
+#
+# Flow: draft a GitHub Release (tag like v0.2.0) → publishing runs →
+# core, then theme, then create, each with provenance.
+name: npm-publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v22
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+        working-directory: packages/core
+      - run: pnpm typecheck
+        working-directory: packages/core
+      - run: pnpm build
+        working-directory: packages/core
+      - run: npm publish --access public --provenance
+        working-directory: packages/core
+      - run: npm publish --access public --provenance
+        working-directory: packages/theme
+      - run: npm publish --access public --provenance
+        working-directory: packages/create
