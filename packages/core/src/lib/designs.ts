@@ -90,6 +90,7 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 		name: "Ember",
 		description: "Warm paper, ink and ember orange. The default Northwind look.",
 		isPreset: true,
+		schema: DESIGN_SCHEMA,
 		light: {
 			brand: "#c2410c", brandStrong: "#9a3412", brandSoft: "#fed7aa",
 			accent: "#2d4a32", accentSoft: "#dde8dc",
@@ -124,6 +125,7 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 		name: "Forest",
 		description: "Deep pine and moss. Quiet, premium, outdoorsy.",
 		isPreset: true,
+		schema: DESIGN_SCHEMA,
 		light: {
 			brand: "#2d4a32", brandStrong: "#1d3322", brandSoft: "#cfdccb",
 			accent: "#b7792b", accentSoft: "#f0e2c4",
@@ -158,6 +160,7 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 		name: "Ocean",
 		description: "Deep sea blue with foam highlights. Clean and confident.",
 		isPreset: true,
+		schema: DESIGN_SCHEMA,
 		light: {
 			brand: "#0c5fa8", brandStrong: "#084a86", brandSoft: "#c9e2f5",
 			accent: "#0e7c7b", accentSoft: "#c9e9e7",
