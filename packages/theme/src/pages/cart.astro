@@ -1,5 +1,22 @@
 ---
+import { getEmDashCollection } from "emdash";
 import Base from "../layouts/Base.astro";
+import { mediaUrl } from "../lib/media";
+
+// Cart contents live in localStorage, so the client can't resolve CMS media
+// itself. Ship a slug -> image map for the catalogue; the cart renderer
+// prefers it over whatever was stored at add time, which also repairs carts
+// saved before images were stored at all.
+const imagesById: Record<string, string> = {};
+try {
+	const res = await getEmDashCollection("products", { limit: 200 });
+	for (const p of (res.entries ?? []) as any[]) {
+		const url = mediaUrl(p.data?.image);
+		if (url) imagesById[p.id] = url;
+	}
+} catch {
+	// Non-fatal: the cart falls back to stored URLs / placeholder.
+}
 ---
 
 <Base title="Your cart" description="Review your cart. Free shipping over $75.">
@@ -11,7 +28,7 @@ import Base from "../layouts/Base.astro";
 	</section>
 </Base>
 
-<script is:inline>
+<script is:inline define:vars={{ imagesById }}>
 document.addEventListener("DOMContentLoaded", function () {
 	var root = document.getElementById("cart-root");
 	if (!root || !window.NWCart) return;
@@ -39,13 +56,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		var rows = items
 			.map(function (i) {
+				var src = imagesById[i.id] || i.image || "";
+				var thumb = src
+					? '<img class="cart-thumb" src="' + esc(src) + '" alt="" loading="lazy" />'
+					: '<div class="cart-thumb cart-thumb-fallback" aria-hidden="true">' +
+						esc((i.name || "?").trim().charAt(0).toUpperCase()) +
+						"</div>";
 				return (
 					'<div class="cart-row" data-id="' +
 					esc(i.id) +
 					'">' +
-					(i.image
-						? '<img class="cart-thumb" src="' + esc(i.image) + '" alt="" />'
-						: '<div class="cart-thumb cart-thumb-fallback"></div>') +
+					thumb +
 					'<div class="cart-name">' +
 					esc(i.name) +
 					'<div class="cart-unit">' +
@@ -172,11 +193,18 @@ document.addEventListener("DOMContentLoaded", function () {
 		height: 72px;
 		object-fit: cover;
 		border-radius: var(--radius);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 	}
 
 	.cart-thumb-fallback {
+		display: grid;
+		place-items: center;
+		font-weight: 700;
+		font-size: 1.5rem;
+		color: var(--color-muted);
 		background: var(--gradient-brand-soft);
-		opacity: 0.5;
+		opacity: 0.85;
 	}
 
 	.cart-name {

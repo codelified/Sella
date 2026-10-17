@@ -3,6 +3,7 @@ import { getEmDashCollection, getEmDashEntry, getSeoMeta } from "emdash";
 import { Image, PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import ProductCard from "../../components/ProductCard.astro";
+import { mediaUrl } from "../../lib/media";
 
 const { slug } = Astro.params;
 if (!slug) return Astro.redirect("/404");
@@ -44,7 +45,7 @@ const cartItem = {
 	id: product.id,
 	name: data.name,
 	price: data.price,
-	image: data.image?.src ?? "",
+	image: mediaUrl(data.image),
 };
 
 // Approved reviews live in the Sella plugin (raw EmDash + plugin =

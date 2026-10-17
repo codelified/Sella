@@ -1,6 +1,7 @@
 import { bestAutomatic, bumpCouponUse, validateCoupon } from "../lib/coupons.js";
 import { convertFromUsd, formatMoney, parseCurrencyList, parseFxRates } from "../lib/currency.js";
 import { decrementStock } from "../lib/inventory.js";
+import { mediaUrl } from "../lib/media.js";
 import { onOrderPaid } from "../lib/paid.js";
 import { calculateTotals, generateOrderNumber, isEmail, maskEmail } from "../lib/pricing.js";
 import { getProvider } from "../lib/registry.js";
@@ -76,7 +77,7 @@ async function priceCart(ctx: any, rawLines: any[]) {
 			name: String(entry.data?.name ?? slug),
 			price: Math.round(price * 100) / 100,
 			qty: finalQty,
-			image: entry.data?.image?.src ?? "",
+			image: mediaUrl(entry.data?.image),
 			lineTotal: Math.round(price * finalQty * 100) / 100,
 			digital,
 		});
