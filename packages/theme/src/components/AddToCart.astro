@@ -1,0 +1,87 @@
+---
+/**
+ * Shared add-to-cart control.
+ *
+ * Templates own markup, not cart behaviour. This component always goes through
+ * the shared cart module (`public/cart.js`), which dispatches `nw:cart-updated`
+ * so the header badge stays in sync. An earlier editorial layout wrote to
+ * localStorage directly and the badge silently stopped updating.
+ */
+export interface Props {
+	/** Entry id, which is the URL slug. */
+	id: string;
+	name: string;
+	price: number;
+	soldOut?: boolean;
+	class?: string;
+}
+
+const { id, name, price, soldOut = false, class: className = "" } = Astro.props;
+const cartItem = { id, name, price, image: "" };
+---
+
+<form class:list={["sella-atc", className]} data-sella-atc>
+	<label class="sella-atc__qty">
+		Qty
+		<input type="number" name="qty" value="1" min="1" max="99" disabled={soldOut} />
+	</label>
+	<button class="btn btn-primary btn-lg" type="submit" disabled={soldOut}>
+		{soldOut ? "Sold out" : "Add to cart"}
+	</button>
+</form>
+<p class="sella-atc__note" data-sella-atc-note hidden>
+	Added to cart ✓ <a href="/cart">View cart →</a>
+</p>
+
+<script is:inline define:vars={{ cartItem }}>
+	document.addEventListener("DOMContentLoaded", function () {
+		document.querySelectorAll("[data-sella-atc]").forEach(function (form) {
+			if (form.dataset.sellaBound === "1") return;
+			form.dataset.sellaBound = "1";
+			form.addEventListener("submit", function (e) {
+				e.preventDefault();
+				var qtyInput = form.querySelector('input[name="qty"]');
+				var qty = Math.max(1, parseInt(qtyInput ? qtyInput.value : "1", 10) || 1);
+				// Always go through the shared cart module so the header badge
+				// (and any other listener) is notified.
+				if (window.NWCart) {
+					window.NWCart.add(cartItem, qty);
+				} else {
+					document.dispatchEvent(new CustomEvent("nw:cart-updated"));
+				}
+				var note = document.querySelector("[data-sella-atc-note]");
+				if (note) note.removeAttribute("hidden");
+			});
+		});
+	});
+</script>
+
+<style>
+	.sella-atc {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+	}
+
+	.sella-atc__qty {
+		display: grid;
+		gap: 0.25rem;
+		font-size: 0.85rem;
+		color: var(--color-muted);
+	}
+
+	.sella-atc__qty input {
+		width: 5rem;
+		padding: 0.6rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-bg);
+		color: var(--color-text);
+	}
+
+	.sella-atc__note {
+		margin: 0.5rem 0 0;
+		font-size: 0.9rem;
+		color: var(--color-brand);
+	}
+</style>

@@ -3,6 +3,8 @@ import { getEmDashCollection, getEmDashEntry, getSeoMeta } from "emdash";
 import { Image, PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import ProductCard from "../../components/ProductCard.astro";
+import AddToCart from "../../components/AddToCart.astro";
+import Reviews from "../../components/Reviews.astro";
 import { mediaUrl } from "../../lib/media";
 
 const { slug } = Astro.params;
@@ -40,33 +42,9 @@ try {
 } catch {
 	related = [];
 }
-
-const cartItem = {
-	id: product.id,
-	name: data.name,
-	price: data.price,
-	image: mediaUrl(data.image),
-};
-
-// Approved reviews live in the Sella plugin (raw EmDash + plugin =
-// full store). Submissions land in the moderation queue until approved.
-let reviews: any[] = [];
-let avgRating = 0;
-let reviewCount = 0;
-try {
-	const [listRes, sumRes] = await Promise.all([
-		fetch(`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/list?productSlug=${slug}`).then((r) => r.json()).catch(() => null),
-		fetch(`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/summary?productSlug=${slug}`).then((r) => r.json()).catch(() => null),
-	]);
-	if (listRes?.success && Array.isArray(listRes.data?.items)) reviews = listRes.data.items;
-	if (sumRes?.success && sumRes.data) {
-		reviewCount = Number(sumRes.data.count) || 0;
-		avgRating = Number(sumRes.data.average) || 0;
-	}
-} catch {
-	reviews = [];
-}
 ---
+
+
 
 <Base
 	title={seo?.title || data.name}
@@ -107,18 +85,7 @@ try {
 					{soldOut ? "Out of stock" : lowStock ? `Only ${stock} left in stock` : "In stock — ships within 24h"}
 				</p>
 
-				<form id="atc-form" class="atc">
-					<label class="qty">
-						Qty
-						<input type="number" name="qty" value="1" min="1" max="99" disabled={soldOut} />
-					</label>
-					<button class="btn btn-primary btn-lg" type="submit" disabled={soldOut}>
-						{soldOut ? "Sold out" : "Add to cart"}
-					</button>
-				</form>
-				<p class="atc-note" id="atc-note" hidden>
-					Added to cart ✓ <a href="/cart">View cart →</a>
-				</p>
+				<AddToCart id={product.id} name={data.name} price={data.price} soldOut={soldOut} />
 
 				<ul class="assurances">
 					<li>Free shipping over $75</li>
@@ -137,76 +104,7 @@ try {
 			)
 		}
 
-		<div class="reviews" id="reviews">
-			<h2>
-				Reviews
-				{
-					reviewCount > 0 && (
-						<span class="avg">
-							{[1, 2, 3, 4, 5].map((i) => (
-								<span class:list={["star", { on: i <= Math.round(avgRating) }]}>★</span>
-							))}
-							<span class="avg-num">
-								{avgRating.toFixed(1)} · {reviewCount} review{reviewCount === 1 ? "" : "s"}
-							</span>
-						</span>
-					)
-				}
-			</h2>
-			{
-				reviews.length === 0 ? (
-					<p class="muted">No reviews yet — be the first to write one.</p>
-				) : (
-					<div class="review-list">
-						{reviews.map((r: any) => (
-							<article class="review">
-								<div class="review-stars" aria-label={`${r.rating} out of 5 stars`}>
-									{[1, 2, 3, 4, 5].map((i) => (
-										<span class:list={["star", { on: i <= Number(r.rating) }]}>★</span>
-									))}
-								</div>
-								{r.title && <h3>{r.title}</h3>}
-								<p>{r.body}</p>
-								<footer>— {r.author}</footer>
-							</article>
-						))}
-					</div>
-				)
-			}
-			<form id="review-form" class="review-form">
-				<h3>Write a review</h3>
-				<div class="row">
-					<label>
-						Rating
-						<select name="rating" required>
-							<option value="5">★★★★★ — Love it</option>
-							<option value="4">★★★★ — Great</option>
-							<option value="3">★★★ — Good</option>
-							<option value="2">★★ — Okay</option>
-							<option value="1">★ — Poor</option>
-						</select>
-					</label>
-					<label>
-						Your name
-						<input type="text" name="author" required maxlength="80" autocomplete="name" />
-					</label>
-				</div>
-				<label>
-					Headline (optional)
-					<input type="text" name="title" maxlength="140" />
-				</label>
-				<label>
-					Review
-					<textarea name="body" rows="4" required minlength="10" maxlength="2000" />
-				</label>
-				<label class="hp" aria-hidden="true">
-					Company
-					<input type="text" name="company" tabindex="-1" autocomplete="off" />
-				</label>
-				<p class="form-msg" id="review-msg" aria-live="polite"></p>
-				<button class="btn btn-secondary" type="submit">Submit review</button>
-			</form>
-		</div>
+		<Reviews slug={product.id} />
 
 		{
 			related.length > 0 && (
@@ -223,65 +121,7 @@ try {
 	</section>
 </Base>
 
-<script is:inline define:vars={{ cartItem }}>
-document.addEventListener("DOMContentLoaded", function () {
-	var form = document.getElementById("atc-form");
-	if (!form) return;
-	form.addEventListener("submit", function (e) {
-		e.preventDefault();
-		var qtyInput = form.querySelector('input[name="qty"]');
-		var qty = Math.max(1, parseInt(qtyInput ? qtyInput.value : "1", 10) || 1);
-		if (window.NWCart) window.NWCart.add(cartItem, qty);
-		var note = document.getElementById("atc-note");
-		if (note) note.removeAttribute("hidden");
-	});
-});
-</script>
 
-<script is:inline define:vars={{ productSlug: slug }}>
-document.addEventListener("DOMContentLoaded", function () {
-	var form = document.getElementById("review-form");
-	var msg = document.getElementById("review-msg");
-	if (!form || !msg) return;
-	form.addEventListener("submit", function (e) {
-		e.preventDefault();
-		var data = new FormData(form);
-		msg.textContent = "Submitting…";
-		msg.className = "form-msg";
-		fetch("/_emdash/api/plugins/sella/reviews/submit", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				product_slug: productSlug,
-				rating: Number(data.get("rating")),
-				title: data.get("title"),
-				body: data.get("body"),
-				author: data.get("author"),
-				company: data.get("company"),
-			}),
-		})
-			.then(function (r) {
-				return r.json().then(function (j) {
-					return { status: r.status, body: j };
-				});
-			})
-			.then(function (res) {
-				if (res.body && res.body.success && res.body.data && res.body.data.received) {
-					msg.textContent = "Thanks! Your review is awaiting moderation and will appear once approved.";
-					msg.className = "form-msg ok";
-					form.reset();
-				} else {
-					msg.textContent = (res.body && res.body.data && res.body.data.error && res.body.data.error.message) || (res.body && res.body.error && res.body.error.message) || "Couldn't submit. Try again.";
-					msg.className = "form-msg bad";
-				}
-			})
-			.catch(function () {
-				msg.textContent = "Couldn't submit. Check your connection.";
-				msg.className = "form-msg bad";
-			});
-	});
-});
-</script>
 
 <style>
 	.back-link {

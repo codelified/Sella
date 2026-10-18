@@ -1,0 +1,144 @@
+---
+/**
+ * Shared reviews block: approved reviews + submission form.
+ *
+ * Reads through the documented routes only (`reviews/list`,
+ * `reviews/summary`, `reviews/submit`), so every template gets identical
+ * behaviour and moderation handling without reimplementing it.
+ */
+export interface Props {
+	slug: string;
+}
+
+const { slug } = Astro.props;
+
+let items: any[] = [];
+let count = 0;
+try {
+	const res = await fetch(
+		`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/list?productSlug=${encodeURIComponent(slug)}&limit=10`,
+	);
+	const out: any = await res.json().catch(() => null);
+	items = out?.data?.items ?? [];
+	count = out?.data?.hasMore && out?.data?.items?.length ? count + out.data.items.length : count;
+} catch {
+	items = [];
+}
+try {
+	const res = await fetch(
+		`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/summary?productSlug=${encodeURIComponent(slug)}`,
+	);
+	const out: any = await res.json().catch(() => null);
+	count = Number(out?.data?.count ?? count);
+} catch {
+	// keep whatever the list told us
+}
+---
+
+<section class="sella-reviews" id="reviews">
+	<h2>Reviews ({count})</h2>
+
+	{items.length === 0 ? (
+		<p class="sella-reviews__empty">No reviews yet.</p>
+	) : (
+		<ul class="sella-reviews__list">
+			{items.map((r: any) => (
+				<li>
+					<strong>{r.title ?? r.author}</strong> — {r.rating}/5
+					<p>{r.body}</p>
+				</li>
+			))}
+		</ul>
+	)}
+
+	<form class="sella-reviews__form" data-sella-review={slug}>
+		<input name="author" placeholder="Your name" required />
+		<input name="rating" type="number" min="1" max="5" placeholder="Rating 1-5" required />
+		<textarea name="body" placeholder="What did you think?" required></textarea>
+		<button class="btn btn-secondary" type="submit">Post review</button>
+	</form>
+	<p class="sella-reviews__msg" data-sella-review-msg hidden></p>
+</section>
+
+<script is:inline>
+	document.addEventListener("DOMContentLoaded", function () {
+		document.querySelectorAll("[data-sella-review]").forEach(function (form) {
+			if (form.dataset.sellaBound === "1") return;
+			form.dataset.sellaBound = "1";
+			var slug = form.getAttribute("data-sella-review");
+			var msg = form.parentElement?.querySelector("[data-sella-review-msg]");
+			form.addEventListener("submit", async function (e) {
+				e.preventDefault();
+				var fd = new FormData(form);
+				var res = await fetch("/_emdash/api/plugins/sella/reviews/submit", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						productSlug: slug,
+						author: fd.get("author"),
+						rating: Number(fd.get("rating")),
+						body: fd.get("body"),
+					}),
+				}).catch(function () {
+					return null;
+				});
+				var out = await res?.json().catch(function () {
+					return null;
+				});
+				var d = out?.data;
+				if (!msg) return;
+				msg.hidden = false;
+				// Errors live inside `data` -- see the response envelope in the
+				// integration guide.
+				msg.textContent = d?.received
+					? d.moderated
+						? "Thanks — your review is awaiting moderation."
+						: "Thanks — your review is live."
+					: d?.error?.message || "Could not submit the review.";
+			});
+		});
+	});
+</script>
+
+<style>
+	.sella-reviews {
+		margin-top: 2rem;
+	}
+
+	.sella-reviews__empty {
+		color: var(--color-muted);
+	}
+
+	.sella-reviews__list {
+		display: grid;
+		gap: 0.75rem;
+		padding-left: 1.1rem;
+	}
+
+	.sella-reviews__form {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: 1rem;
+		max-width: 28rem;
+	}
+
+	.sella-reviews__form input,
+	.sella-reviews__form textarea {
+		padding: 0.6rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-bg);
+		color: var(--color-text);
+		font: inherit;
+	}
+
+	.sella-reviews__form textarea {
+		min-height: 5rem;
+		resize: vertical;
+	}
+
+	.sella-reviews__msg {
+		font-size: 0.9rem;
+		color: var(--color-brand);
+	}
+</style>

@@ -33,5 +33,6 @@
 	},
 	"overrides": {
 		"modern-tar": "0.7.7"
-	}
+	},
+	"compatibleCore": ">=0.2.0 <0.3.0"
 }
