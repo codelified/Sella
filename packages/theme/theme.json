@@ -11,6 +11,7 @@
 		"src/pages/",
 		"src/components/",
 		"src/layouts/",
+		"src/lib/",
 		"src/styles/theme.css",
 		"public/fonts/",
 		"src/styles/fonts.css",
@@ -21,5 +22,16 @@
 	"config": "astro.config.mjs",
 	"deps": {
 		"@sella/core": "^0.2.0"
+	},
+	"layouts": {
+		"catalog": [],
+		"editorial": [
+			"src/pages/shop/index.astro",
+			"src/pages/shop/[slug].astro",
+			"src/styles/editorial.css"
+		]
+	},
+	"overrides": {
+		"modern-tar": "0.7.7"
 	}
 }

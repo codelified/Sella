@@ -1,0 +1,59 @@
+---
+/**
+ * Editorial layout — shop listing.
+ *
+ * Structurally different from the default catalog layout: no product grid.
+ * Large, alternating full-bleed entries with oversized serif numbering, the
+ * way a magazine would set a product spread. Same tokens, so runtime designs
+ * still apply.
+ */
+import { getEmDashCollection } from "emdash";
+import { Image } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import "../../styles/editorial.css";
+
+const { entries: products, cacheHint } = await getEmDashCollection("products", {
+	status: "published",
+	orderBy: { created_at: "desc" },
+	limit: 24,
+});
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+---
+
+<Base title="Shop" description="Everything we make.">
+	<section class="ed-shop container">
+		<header class="ed-head">
+			<p class="ed-eyebrow">The collection</p>
+			<h1 class="ed-title">Shop</h1>
+		</header>
+
+		{products.length === 0 ? (
+			<p class="ed-empty">No products yet — add some in the admin.</p>
+		) : (
+			<ol class="ed-list">
+				{products.map((p: any, i: number) => (
+					<li class:list={["ed-item", { "ed-item--flip": i % 2 === 1 }]}>
+						<a class="ed-link" href={`/shop/${p.id}`}>
+							<span class="ed-index">{String(i + 1).padStart(2, "0")}</span>
+							<div class="ed-media">
+								{p.data.image ? (
+									<Image image={p.data.image} alt={p.data.name} />
+								) : (
+									<div class="ed-media-fallback" aria-hidden="true" />
+								)}
+							</div>
+							<div class="ed-copy">
+								<h2 class="ed-name">{p.data.name}</h2>
+								<p class="ed-price">${Number(p.data.price).toFixed(2)}</p>
+								{p.data.short_description && (
+									<p class="ed-desc">{p.data.short_description}</p>
+								)}
+								<p class="ed-cta">View →</p>
+							</div>
+						</a>
+					</li>
+				))}
+			</ol>
+		)}
+	</section>
+</Base>

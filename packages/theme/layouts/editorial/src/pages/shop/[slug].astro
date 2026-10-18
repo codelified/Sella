@@ -1,0 +1,257 @@
+---
+/**
+ * Editorial layout — product detail.
+ *
+ * Structurally different from the default layout: the image is full-bleed on
+ * one side, the title is oversized, and the buy panel is sticky. Reads like a
+ * product spread rather than a two-column spec sheet.
+ */
+import { getEmDashEntry } from "emdash";
+import { Image } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import "../../styles/editorial.css";
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect("/404");
+
+const { entry: product, cacheHint } = await getEmDashEntry("products", slug);
+if (!product) return Astro.redirect("/404");
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const data: any = product.data;
+const stock = typeof data.stock === "number" ? data.stock : null;
+const soldOut = stock !== null && stock <= 0;
+
+const [reviewsRes, summaryRes] = await Promise.all([
+	fetch(`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/list?productSlug=${slug}&limit=10`)
+		.then((r) => r.json())
+		.catch(() => null),
+	fetch(`${Astro.url.origin}/_emdash/api/plugins/sella/reviews/summary?productSlug=${slug}`)
+		.then((r) => r.json())
+		.catch(() => null),
+]);
+const reviews: any[] = (reviewsRes as any)?.items ?? [];
+const reviewCount = (summaryRes as any)?.count ?? 0;
+---
+
+<Base title={data.name} description={data.short_description ?? data.name}>
+	<article class="ed-product">
+		<div class="ed-product-media">
+			{data.image ? (
+				<Image image={data.image} alt={data.name} />
+			) : (
+				<div class="ed-media-fallback" aria-hidden="true" />
+			)}
+		</div>
+
+		<div class="ed-product-panel">
+			<p class="ed-eyebrow">${Number(data.price).toFixed(2)}</p>
+			<h1 class="ed-product-title">{data.name}</h1>
+			{data.short_description && <p class="ed-product-desc">{data.short_description}</p>}
+
+			{stock !== null && (
+				<p class="ed-stock">{stock > 0 ? `${stock} in stock` : "Sold out"}</p>
+			)}
+
+			<form id="atc" class="ed-atc">
+				<input type="number" name="qty" value="1" min="1" max="99" aria-label="Quantity" />
+				<button type="submit" disabled={soldOut}>{soldOut ? "Sold out" : "Add to cart"}</button>
+			</form>
+			<p id="atc-note" class="ed-note" hidden>Added to cart.</p>
+
+			<section class="ed-reviews" id="reviews">
+				<h2>Reviews ({reviewCount})</h2>
+				{reviews.length === 0 ? (
+					<p class="ed-product-desc">No reviews yet.</p>
+				) : (
+					<ul>
+						{reviews.map((r: any) => (
+							<li>
+								<strong>{r.title ?? r.author}</strong> — {r.rating}/5
+								<p>{r.body}</p>
+							</li>
+						))}
+					</ul>
+				)}
+				<form id="review-form">
+					<input name="author" placeholder="Your name" required />
+					<input name="rating" type="number" min="1" max="5" placeholder="Rating 1-5" required />
+					<textarea name="body" placeholder="What did you think?" required></textarea>
+					<button type="submit">Post review</button>
+				</form>
+				<p id="review-msg" class="ed-note" hidden></p>
+			</section>
+		</div>
+	</article>
+</Base>
+
+<script is:inline define:vars={{ slug: product.id, name: data.name, price: data.price }}>
+	document.addEventListener("DOMContentLoaded", function () {
+		var form = document.getElementById("atc");
+		if (form) {
+			form.addEventListener("submit", function (e) {
+				e.preventDefault();
+				var qty = Math.max(1, parseInt(form.querySelector('[name="qty"]').value, 10) || 1);
+				var cart = {};
+				try {
+					cart = JSON.parse(localStorage.getItem("cart") || "{}");
+				} catch {}
+				cart[slug] = { slug: slug, name: name, price: price, qty: (cart[slug]?.qty || 0) + qty };
+				localStorage.setItem("cart", JSON.stringify(cart));
+				document.getElementById("atc-note")?.removeAttribute("hidden");
+			});
+		}
+		var rf = document.getElementById("review-form");
+		if (rf) {
+			rf.addEventListener("submit", async function (e) {
+				e.preventDefault();
+				var msg = document.getElementById("review-msg");
+				var fd = new FormData(rf);
+				var res = await fetch("/_emdash/api/plugins/sella/reviews/submit", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						productSlug: slug,
+						author: fd.get("author"),
+						rating: Number(fd.get("rating")),
+						body: fd.get("body"),
+					}),
+				}).catch(function () {
+					return null;
+				});
+				var out = await res?.json().catch(function () {
+					return null;
+				});
+				var d = out?.data;
+				if (msg) {
+					msg.hidden = false;
+					msg.textContent = d?.received
+						? d.moderated
+							? "Thanks — your review is awaiting moderation."
+							: "Thanks — your review is live."
+						: d?.error?.message || "Could not submit the review.";
+				}
+			});
+		}
+	});
+</script>
+
+<style>
+	.ed-product {
+		display: grid;
+		grid-template-columns: 1.25fr 1fr;
+		gap: 3rem;
+		align-items: start;
+		min-height: 70vh;
+	}
+
+	.ed-product-media {
+		position: sticky;
+		top: 0;
+		min-height: 70vh;
+		background: var(--color-surface);
+		overflow: hidden;
+	}
+
+	.ed-product-media :global(img) {
+		width: 100%;
+		height: 100vh;
+		object-fit: cover;
+	}
+
+	.ed-product-panel {
+		padding: 5rem 3rem 5rem 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.ed-product-title {
+		margin: 0;
+		font-family: var(--font-heading);
+		font-size: clamp(2.25rem, 5vw, 4rem);
+		line-height: 1.02;
+		letter-spacing: -0.03em;
+	}
+
+	.ed-product-desc {
+		color: var(--color-muted);
+		max-width: 42ch;
+		margin: 0;
+	}
+
+	.ed-stock {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--color-muted);
+	}
+
+	.ed-atc {
+		display: flex;
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+
+	.ed-atc input {
+		width: 5rem;
+		padding: 0.7rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-bg);
+		color: var(--color-text);
+	}
+
+	.ed-atc button {
+		flex: 1;
+		padding: 0.7rem 1.5rem;
+		border: 0;
+		border-radius: var(--radius);
+		background: var(--color-brand);
+		color: var(--color-on-brand, #fff);
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.ed-atc button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.ed-note {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--color-brand);
+	}
+
+	.ed-reviews {
+		margin-top: 2.5rem;
+		border-top: 1px solid var(--color-border);
+		padding-top: 1.5rem;
+	}
+
+	.ed-reviews form {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: 1rem;
+	}
+
+	@media (max-width: 860px) {
+		.ed-product {
+			grid-template-columns: 1fr;
+		}
+
+		.ed-product-media {
+			position: static;
+			min-height: 0;
+			aspect-ratio: 4 / 3;
+		}
+
+		.ed-product-media :global(img) {
+			height: auto;
+		}
+
+		.ed-product-panel {
+			padding: 2rem 1.25rem 4rem;
+		}
+	}
+</style>

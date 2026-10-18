@@ -70,6 +70,17 @@ async function main() {
 	}
 	const manifest = JSON.parse(readFileSync(join(themeDir, "theme.json"), "utf8"));
 
+	// Layout variant: structural differences (grid vs editorial spread).
+	// `--theme` means "path to the theme package", so this needs its own flag.
+	const layouts = manifest.layouts || { catalog: [] };
+	const layoutNames = Object.keys(layouts);
+	const layout = (arg("--layout") || (process.argv.includes("--yes") ? "catalog" : await prompt("Layout (catalog/editorial)", "catalog")))
+		.trim()
+		.toLowerCase();
+	if (!layoutNames.includes(layout)) {
+		fail(`Unknown layout "${layout}". Available: ${layoutNames.join(", ")}`);
+	}
+
 	// Core spec: registry version by default, file: path for local development.
 	const coreOpt = arg("--core") || `@sella/core@${manifest.core ?? "^0.2.0"}`;
 
@@ -110,6 +121,18 @@ async function main() {
 		cpSync(src, dest, { recursive: true });
 		console.log(`  + ${entry}`);
 	}
+	// Layout variant overrides structural files (shop grid vs editorial spread).
+	const layoutFiles = layouts[layout] || [];
+	if (layoutFiles.length > 0) {
+		console.log(`  layout: ${layout}`);
+		for (const entry of layoutFiles) {
+			const src = join(themeDir, "layouts", layout, entry);
+			if (!existsSync(src)) fail(`Layout file missing: ${layout}/${entry}`);
+			cpSync(src, join(target, entry), { recursive: true });
+			console.log(`    ~ ${entry}`);
+		}
+	}
+
 	// astro.config.mjs ships fully wired (plugin + fonts + node adapter).
 	cpSync(join(themeDir, manifest.config), join(target, manifest.config));
 	console.log(`  + ${manifest.config} (wired)`);
@@ -118,6 +141,13 @@ async function main() {
 	const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 	for (const [dep, range] of Object.entries(manifest.deps || {})) {
 		if (!pkg.dependencies[dep]) pkg.dependencies[dep] = range;
+	}
+	// npm overrides required for the server bundle to boot. EmDash imports
+	// `createGzipDecoder`, renamed in modern-tar 0.8.x, and EmDash's own range
+	// (^0.7.5) resolves to 0.8.x -> SyntaxError on the first request.
+	for (const [name, range] of Object.entries(manifest.overrides || {})) {
+		pkg.overrides = pkg.overrides || {};
+		pkg.overrides[name] = range;
 	}
 	const { writeFileSync } = await import("node:fs");
 	writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");

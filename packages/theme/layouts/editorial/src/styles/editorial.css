@@ -1,0 +1,150 @@
+/*
+ * Editorial layout.
+ *
+ * Deliberately different from the default catalog layout: asymmetric, large
+ * type, generous whitespace, no card grid. Every colour, font and spacing
+ * value is a design token, so runtime designs (Ember/Forest/Ocean) still
+ * reskin this layout completely.
+ */
+
+.ed-shop {
+	padding-block: 4rem 6rem;
+}
+
+.ed-head {
+	margin-bottom: 3rem;
+	border-bottom: 1px solid var(--color-border);
+	padding-bottom: 1.5rem;
+}
+
+.ed-eyebrow {
+	margin: 0 0 0.5rem;
+	font-size: 0.8rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+
+.ed-title {
+	margin: 0;
+	font-family: var(--font-heading);
+	font-size: clamp(2.75rem, 7vw, 5.5rem);
+	line-height: 1;
+	letter-spacing: -0.03em;
+}
+
+.ed-empty {
+	color: var(--color-muted);
+}
+
+.ed-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 4.5rem;
+}
+
+.ed-item {
+	border-top: 1px solid var(--color-border);
+	padding-top: 2rem;
+}
+
+.ed-link {
+	display: grid;
+	grid-template-columns: 4rem 1.15fr 1fr;
+	gap: 2rem;
+	align-items: center;
+	text-decoration: none;
+	color: inherit;
+}
+
+.ed-item--flip .ed-link {
+	grid-template-columns: 4rem 1fr 1.15fr;
+}
+
+.ed-item--flip .ed-media {
+	order: 3;
+}
+
+.ed-item--flip .ed-copy {
+	order: 2;
+}
+
+.ed-index {
+	font-family: var(--font-heading);
+	font-size: 1rem;
+	color: var(--color-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.ed-media {
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	border-radius: var(--radius-lg);
+	background: var(--color-surface);
+}
+
+.ed-media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ed-link:hover .ed-media img {
+	transform: scale(1.04);
+}
+
+.ed-media-fallback {
+	width: 100%;
+	height: 100%;
+	background: var(--gradient-brand-soft);
+}
+
+.ed-name {
+	margin: 0;
+	font-family: var(--font-heading);
+	font-size: clamp(1.6rem, 3vw, 2.4rem);
+	line-height: 1.1;
+	letter-spacing: -0.02em;
+}
+
+.ed-price {
+	margin: 0.5rem 0 0;
+	font-size: 1.1rem;
+	font-weight: 700;
+}
+
+.ed-desc {
+	margin: 0.75rem 0 0;
+	color: var(--color-muted);
+	max-width: 38ch;
+}
+
+.ed-cta {
+	margin: 1rem 0 0;
+	font-weight: 600;
+	color: var(--color-brand);
+}
+
+.ed-cta::first-letter {
+	text-transform: uppercase;
+}
+
+@media (max-width: 800px) {
+	.ed-link,
+	.ed-item--flip .ed-link {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.ed-item--flip .ed-media,
+	.ed-item--flip .ed-copy {
+		order: initial;
+	}
+
+	.ed-index {
+		order: -1;
+	}
+}
