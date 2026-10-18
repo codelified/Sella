@@ -53,26 +53,30 @@ import { seedDemoRoute } from "./routes/seed.js";
 import { designActivateRoute, designActiveRoute, designListRoute } from "./routes/designs.js";
 import { paymongoWebhookRoute, paypalWebhookRoute, stripeWebhookRoute } from "./routes/webhook.js";
 
-export interface SellaOptions {
-	/** Override the free-shipping threshold (defaults to settings value). */
-	freeShippingAt?: number;
-}
-
 const PLUGIN_ID = "sella";
 const PLUGIN_VERSION = "0.2.0";
 
-export function sella(options: SellaOptions = {}): PluginDescriptor<SellaOptions> {
+/**
+ * Site config descriptor.
+ *
+ * Sella is a `standard` format plugin: its entrypoint exports the resolved
+ * plugin as its default export, which is what lets EmDash sandbox it, load it
+ * from a marketplace bundle, and publish it. Standard-format plugins configure
+ * themselves through KV settings (see `admin.settingsSchema`) rather than
+ * constructor options — the old `freeShippingAt` constructor option is now just
+ * the `freeShippingAt` setting.
+ */
+export function sella(): PluginDescriptor {
 	return {
 		id: PLUGIN_ID,
 		version: PLUGIN_VERSION,
-		format: "native",
+		format: "standard",
 		entrypoint: "@sella/core",
 		adminEntry: "@sella/core/admin",
-		options,
 	};
 }
 
-export function createPlugin(options: SellaOptions = {}) {
+export function createPlugin() {
 	return definePlugin({
 		id: PLUGIN_ID,
 		version: PLUGIN_VERSION,
@@ -225,7 +229,7 @@ export function createPlugin(options: SellaOptions = {}) {
 				handler: async (ctx) => ({
 					plugin: ctx.plugin.id,
 					version: PLUGIN_VERSION,
-					freeShippingAt: options.freeShippingAt ?? 75,
+					freeShippingAt: 75,
 					callerId: ctx.user?.id ?? null,
 				}),
 			},
@@ -332,4 +336,7 @@ export function createPlugin(options: SellaOptions = {}) {
 	});
 }
 
-export default createPlugin;
+// Standard format: the entrypoint's default export is the resolved plugin, not
+// a factory. That is what EmDash imports when it sandboxes or marketplace-loads
+// the plugin.
+export default createPlugin();
