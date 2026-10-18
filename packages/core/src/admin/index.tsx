@@ -4,7 +4,7 @@ import { DesignsPage } from "./pages/DesignsPage.js";
 import { OrdersPage } from "./pages/OrdersPage.js";
 import { ReportsPage } from "./pages/ReportsPage.js";
 import { ReviewsPage } from "./pages/ReviewsPage.js";
-import { LowStockWidget, PendingReviewsWidget, RecentOrdersWidget } from "./widgets.js";
+import { LowStockWidget, PendingReviewsWidget, RecentOrdersWidget, SetupNeededWidget } from "./widgets.js";
 
 export const pages: PluginAdminExports["pages"] = {
 	"/orders": OrdersPage,
@@ -18,4 +18,5 @@ export const widgets: PluginAdminExports["widgets"] = {
 	"recent-orders": RecentOrdersWidget,
 	"low-stock": LowStockWidget,
 	"pending-reviews": PendingReviewsWidget,
+	"setup-needed": SetupNeededWidget,
 };

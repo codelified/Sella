@@ -50,6 +50,7 @@ import {
 	reviewSummaryRoute,
 } from "./routes/reviews.js";
 import { seedDemoRoute } from "./routes/seed.js";
+import { configRoute } from "./routes/config.js";
 import { designActivateRoute, designActiveRoute, designListRoute } from "./routes/designs.js";
 import { paymongoWebhookRoute, paypalWebhookRoute, stripeWebhookRoute } from "./routes/webhook.js";
 
@@ -257,6 +258,7 @@ export function createPlugin(options: SellaOptions = {}) {
 			"downloads/for-order": downloadForOrderRoute,
 			"reports/summary": reportSummaryRoute,
 			"reviews/submit": reviewSubmitRoute,
+			config: configRoute,
 			"reviews/list": reviewListRoute,
 			"reviews/summary": reviewSummaryRoute,
 			"reviews/pending": reviewPendingRoute,

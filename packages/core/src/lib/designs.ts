@@ -27,6 +27,9 @@ export interface DesignTokens {
 	/** Layout rhythm. */
 	maxWidth: string;
 	sectionPad: string;
+	/** Design-owned artwork, swapped at runtime without touching content. */
+	heroImage?: string;
+	heroImageDark?: string;
 	/** Ambient background texture. */
 	pattern: "none" | "dots" | "grid" | "glow";
 }
@@ -44,7 +47,7 @@ export interface DesignRecord {
 	updatedAt: string;
 }
 
-export const DESIGN_SCHEMA = 3;
+export const DESIGN_SCHEMA = 4;
 
 /** Curated font menu. Google families load via @import at runtime. */
 export const FONTS: Record<string, { label: string; stack: string; google?: string }> = {
@@ -104,6 +107,8 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 			maxWidth: "1200px",
 			sectionPad: "8rem 0",
 			pattern: "glow",
+			heroImage: "/patterns/ember.svg",
+			heroImageDark: "/patterns/ember-dark.svg",
 		},
 		dark: {
 			brand: "#fb923c", brandStrong: "#ea580c", brandSoft: "#7c2d12",
@@ -118,6 +123,8 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 			maxWidth: "1200px",
 			sectionPad: "8rem 0",
 			pattern: "glow",
+			heroImage: "/patterns/ember.svg",
+			heroImageDark: "/patterns/ember-dark.svg",
 		},
 	},
 	{
@@ -139,6 +146,8 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 			maxWidth: "1140px",
 			sectionPad: "7rem 0",
 			pattern: "dots",
+			heroImage: "/patterns/forest.svg",
+			heroImageDark: "/patterns/forest-dark.svg",
 		},
 		dark: {
 			brand: "#86b48e", brandStrong: "#5d8a64", brandSoft: "#1e2f23",
@@ -153,6 +162,8 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 			maxWidth: "1140px",
 			sectionPad: "7rem 0",
 			pattern: "dots",
+			heroImage: "/patterns/forest.svg",
+			heroImageDark: "/patterns/forest-dark.svg",
 		},
 	},
 	{
@@ -174,6 +185,8 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 			maxWidth: "1280px",
 			sectionPad: "9rem 0",
 			pattern: "grid",
+			heroImage: "/patterns/ocean.svg",
+			heroImageDark: "/patterns/ocean-dark.svg",
 		},
 		dark: {
 			brand: "#5aa9e6", brandStrong: "#2f7fc1", brandSoft: "#12395c",
@@ -188,9 +201,16 @@ export const PRESETS: Array<Omit<DesignRecord, "createdAt" | "updatedAt">> = [
 			maxWidth: "1280px",
 			sectionPad: "9rem 0",
 			pattern: "grid",
+			heroImage: "/patterns/ocean.svg",
+			heroImageDark: "/patterns/ocean-dark.svg",
 		},
 	},
 ];
+
+/** Neutralise characters that would break out of a CSS url() token. */
+function cssUrl(url: string): string {
+	return url.replace(/["'\\)]/g, "\\$&");
+}
 
 /** Render a design record as a stylesheet both color schemes. */
 export function renderThemeCss(d: DesignRecord): string {
@@ -233,6 +253,8 @@ export function renderThemeCss(d: DesignRecord): string {
 			`--shadow-lg:${sh.lg};`,
 			`--shadow-xl:${sh.xl};`,
 			`--wide-width:${t.maxWidth};`,
+			t.heroImage ? `--hero-image:url("${cssUrl(t.heroImage)}");` : "",
+			t.heroImageDark ? `--hero-image-dark:url("${cssUrl(t.heroImageDark)}");` : "",
 		].join("");
 	};
 	return (

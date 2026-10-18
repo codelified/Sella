@@ -1,6 +1,10 @@
 {
 	"$comment": "Manifest consumed by @sella/create. Lists what the CLI overlays onto a stock EmDash marketing template (node platform).",
-	"base": { "template": "marketing", "platform": "node", "emdash": "^1.0.1" },
+	"base": {
+		"template": "marketing",
+		"platform": "node",
+		"emdash": "^1.0.1"
+	},
 	"core": "^0.2.0",
 	"copy": [
 		"seed/seed.json",
@@ -9,6 +13,7 @@
 		"src/layouts/",
 		"src/styles/theme.css",
 		"public/cart.js",
+		"public/patterns/",
 		".env.example"
 	],
 	"config": "astro.config.mjs",

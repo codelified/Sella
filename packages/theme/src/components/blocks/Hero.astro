@@ -162,6 +162,16 @@ const secondaryCta =
 		width: 100%;
 		max-width: 480px;
 		justify-self: center;
+		/* Design-owned artwork, swapped live by the active Sella design. */
+		background-image: var(--hero-image, none);
+		background-size: cover;
+		background-position: center;
+		border-radius: 999px 999px var(--radius-lg) var(--radius-lg);
+	}
+
+	/* Dark mode gets its own artwork when the design provides one. */
+	:global(html.dark) .hero-visual {
+		background-image: var(--hero-image-dark, var(--hero-image, none));
 	}
 
 	.hero-visual img {
