@@ -1,0 +1,71 @@
+---
+// Shop listing. Per docs/theme-integration.md §2: "Shop listing | CMS query
+// (your code) | grid of products". Nothing here uses Sella code — products are
+// plain CMS content.
+import { getEmDashCollection } from "emdash";
+import { Image } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+
+const { entries: products, cacheHint } = await getEmDashCollection("products", {
+	status: "published",
+	orderBy: { created_at: "desc" },
+	limit: 48,
+});
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+---
+
+<Base title="Shop" description="Everything we make.">
+	<section class="container section">
+		<h1>Shop</h1>
+		{products.length === 0 ? <p>No products yet.</p> : (
+			<ul class="grid">
+				{products.map((p: any) => (
+					<li class="card">
+						<a href={`/shop/${p.id}`}>
+							{p.data.image ? (
+								<Image image={p.data.image} alt={p.data.name} />
+							) : (
+								<div class="thumb" aria-hidden="true" />
+							)}
+							<h2>{p.data.name}</h2>
+						</a>
+						<p class="price">${Number(p.data.price).toFixed(2)}</p>
+						<p class="stock">
+							{typeof p.data.stock === "number"
+								? (p.data.stock > 0 ? `${p.data.stock} in stock` : "Sold out")
+								: ""}
+						</p>
+					</li>
+				))}
+			</ul>
+		)}
+	</section>
+</Base>
+
+<style>
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 1.5rem;
+		list-style: none;
+		padding: 0;
+	}
+	.thumb {
+		aspect-ratio: 4 / 3;
+		background: var(--color-surface, #eee);
+		border-radius: 8px;
+	}
+	.price {
+		font-weight: 700;
+		margin: 0.25rem 0 0;
+	}
+	.stock {
+		color: var(--color-muted, #666);
+		font-size: 0.9rem;
+		margin: 0;
+	}
+	h2 {
+		font-size: 1.05rem;
+		margin: 0.5rem 0 0;
+	}
+</style>

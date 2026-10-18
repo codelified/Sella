@@ -1,0 +1,121 @@
+---
+// Checkout. Per docs/theme-integration.md §3: POST coupons/validate,
+// POST checkout. Written only from the documented request/response shapes.
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Checkout" description="Complete your order.">
+	<section class="container section">
+		<h1>Checkout</h1>
+		<form id="checkout" class="grid-form">
+			<label>Email <input name="email" type="email" required /></label>
+			<label>Name <input name="name" required /></label>
+			<label>Coupon <input name="coupon" placeholder="optional" /></label>
+			<label>Line 1 <input name="line1" /></label>
+			<label>City <input name="city" /></label>
+			<label>ZIP <input name="zip" /></label>
+			<button type="submit">Place order</button>
+		</form>
+		<p id="msg" hidden></p>
+		<p id="items" class="muted"></p>
+	</section>
+</Base>
+
+<script is:inline>
+document.addEventListener("DOMContentLoaded", function () {
+	function cart() {
+		try {
+			return JSON.parse(localStorage.getItem("cart") || "{}");
+		} catch {
+			return {};
+		}
+	}
+	var items = Object.values(cart()).map(function (i) {
+		return { slug: i.slug, qty: i.qty };
+	});
+	document.getElementById("items").textContent = items.length + " item(s) in cart";
+	var form = document.getElementById("checkout");
+	var msg = document.getElementById("msg");
+
+	// Optional coupon validation via the documented endpoint.
+	var couponInput = form.querySelector('[name="coupon"]');
+	couponInput.addEventListener("blur", async function () {
+		var code = couponInput.value.trim();
+		if (!code) return;
+		var subtotal = Object.values(cart()).reduce(function (n, i) {
+			return n + i.price * i.qty;
+		}, 0);
+		var res = await fetch("/_emdash/api/plugins/sella/coupons/validate", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ code: code, subtotal: subtotal }),
+		}).catch(function () {
+			return null;
+		});
+		var out = await res?.json().catch(function () {
+			return null;
+		});
+		couponInput.setCustomValidity(
+			out?.data?.valid ? "" : out?.data?.reason || "Coupon not valid",
+		);
+	});
+
+	form.addEventListener("submit", async function (e) {
+		e.preventDefault();
+		var fd = new FormData(form);
+		var body = {
+			provider: "manual",
+			email: fd.get("email"),
+			name: fd.get("name"),
+			items: items,
+			address: { line1: fd.get("line1"), city: fd.get("city"), zip: fd.get("zip") },
+			cartId: "guest-" + Math.random().toString(36).slice(2),
+		};
+		if (fd.get("coupon")) body.coupon = fd.get("coupon");
+		var res = await fetch("/_emdash/api/plugins/sella/checkout", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+		}).catch(function () {
+			return null;
+		});
+		var out = await res?.json().catch(function () {
+			return null;
+		});
+		var data = out?.data;
+		// Errors live INSIDE data, per the response envelope in the guide.
+		if (data?.error) {
+			msg.hidden = false;
+			msg.textContent = data.error.message + " (" + data.error.code + ")";
+			return;
+		}
+		if (data?.url) {
+			window.location.href = data.url;
+			return;
+		}
+		// manual provider: instructions + order number (documented §3)
+		msg.hidden = false;
+		msg.textContent =
+			"Order " + (data?.orderNumber || "") + " placed. " + (data?.instructions || "");
+		localStorage.removeItem("cart");
+	});
+});
+</script>
+
+<style>
+	.grid-form {
+		display: grid;
+		gap: 0.75rem;
+		max-width: 28rem;
+	}
+	.grid-form label {
+		display: grid;
+		gap: 0.25rem;
+	}
+	.grid-form input {
+		padding: 0.5rem;
+	}
+	.muted {
+		color: var(--color-muted, #666);
+	}
+</style>

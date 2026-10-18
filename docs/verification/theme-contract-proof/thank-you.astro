@@ -1,0 +1,78 @@
+---
+// Thank-you. Per docs/theme-integration.md §5: poll orders/by-session, or use
+// customers/lookup with email + order number for guest orders.
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Thank you" description="Your order.">
+	<section class="container section">
+		<h1>Thank you</h1>
+		<div id="order">Checking your order…</div>
+	</section>
+</Base>
+
+<script is:inline>
+document.addEventListener("DOMContentLoaded", async function () {
+	var el = document.getElementById("order");
+	var params = new URLSearchParams(location.search);
+	var sessionId = params.get("session_id") || params.get("sessionId");
+	var orderNumber = params.get("order");
+	var email = localStorage.getItem("lastEmail") || "";
+
+	function show(o) {
+		el.innerHTML =
+			"<p><strong>" +
+			(o.orderNumber || "") +
+			"</strong> — " +
+			(o.status || "") +
+			"</p>" +
+			"<p>Total " +
+			(o.totalLabel || "") +
+			", " +
+			(o.itemCount ?? "") +
+			" item(s)</p>";
+	}
+
+	async function poll(sid) {
+		// Webhooks can take a moment; poll until the order settles.
+		for (var i = 0; i < 10; i++) {
+			var res = await fetch("/_emdash/api/plugins/sella/orders/by-session", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ sessionId: sid }),
+			}).catch(function () {
+				return null;
+			});
+			var out = await res?.json().catch(function () {
+				return null;
+			});
+			if (out?.data?.found) {
+				show(out.data);
+				if (out.data.status !== "pending") return;
+			}
+			await new Promise(function (r) {
+				setTimeout(r, 2000);
+			});
+		}
+		el.textContent = "Still processing. Refresh in a moment.";
+	}
+
+	if (sessionId) poll(sessionId);
+	else if (orderNumber && email) {
+		var r2 = await fetch("/_emdash/api/plugins/sella/customers/lookup", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email: email, orderNumber: orderNumber }),
+		}).catch(function () {
+			return null;
+		});
+		var o2 = await r2?.json().catch(function () {
+			return null;
+		});
+		if (o2?.data?.found) show(o2.data);
+		else el.textContent = "We couldn't find that order yet.";
+	} else {
+		el.textContent = "No order reference found.";
+	}
+});
+</script>

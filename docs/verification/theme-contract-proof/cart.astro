@@ -1,0 +1,106 @@
+---
+// Cart. Per docs/theme-integration.md §2: "Cart | none (localStorage is fine)
+// quantities, totals estimate".
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Cart" description="Review your cart.">
+	<section class="container section">
+		<h1>Your cart</h1>
+		<div id="cart-root"><p>Loading…</p></div>
+	</section>
+</Base>
+
+<script is:inline>
+document.addEventListener("DOMContentLoaded", function () {
+	var root = document.getElementById("cart-root");
+	function cart() {
+		try {
+			return JSON.parse(localStorage.getItem("cart") || "{}");
+		} catch {
+			return {};
+		}
+	}
+	function save(c) {
+		localStorage.setItem("cart", JSON.stringify(c));
+	}
+	function money(n) {
+		return "$" + Number(n).toFixed(2);
+	}
+	function render() {
+		var c = cart();
+		var items = Object.values(c);
+		if (!items.length) {
+			root.innerHTML = '<p>Your cart is empty. <a href="/shop">Shop</a>.</p>';
+			return;
+		}
+		var subtotal = items.reduce(function (n, i) {
+			return n + i.price * i.qty;
+		}, 0);
+		var rows = items
+			.map(function (i) {
+				return (
+					'<div class="row" data-slug="' +
+					i.slug +
+					'"><div><strong>' +
+					i.name +
+					"</strong><br /><small>" +
+					money(i.price) +
+					" each</small></div>" +
+					'<div class="qty"><button data-dec>−</button> <span>' +
+					i.qty +
+					'</span> <button data-inc>+</button></div>' +
+					'<div class="line">' +
+					money(i.price * i.qty) +
+					'</div><button data-remove aria-label="Remove">×</button></div>'
+				);
+			})
+			.join("");
+		root.innerHTML =
+			rows +
+			'<div class="total"><strong>Subtotal</strong> <strong>' +
+			money(subtotal) +
+			"</strong></div>" +
+			'<p><a class="btn" href="/checkout">Checkout</a></p>';
+	}
+	root.addEventListener("click", function (e) {
+		var t = e.target;
+		var row = t.closest(".row");
+		if (!row) return;
+		var slug = row.getAttribute("data-slug");
+		var c = cart();
+		if (!c[slug]) return;
+		if (t.hasAttribute("data-inc")) c[slug].qty = Math.min(99, c[slug].qty + 1);
+		else if (t.hasAttribute("data-dec")) c[slug].qty -= 1;
+		else if (t.hasAttribute("data-remove")) delete c[slug];
+		if (c[slug] && c[slug].qty <= 0) delete c[slug];
+		save(c);
+		render();
+	});
+	render();
+});
+</script>
+
+<style>
+	.row {
+		display: grid;
+		grid-template-columns: 1fr auto auto auto;
+		gap: 1rem;
+		align-items: center;
+		padding: 0.75rem 0;
+		border-bottom: 1px solid var(--color-border, #ddd);
+	}
+	.total {
+		display: flex;
+		justify-content: space-between;
+		padding: 1rem 0;
+	}
+	.btn {
+		display: inline-block;
+		padding: 0.6rem 1.2rem;
+		background: var(--color-brand, #111);
+		color: var(--color-on-brand, #fff);
+		border-radius: 6px;
+		text-decoration: none;
+	}
+</style>
