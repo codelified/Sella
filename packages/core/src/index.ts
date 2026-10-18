@@ -77,7 +77,7 @@ export function createPlugin(options: SellaOptions = {}) {
 		id: PLUGIN_ID,
 		version: PLUGIN_VERSION,
 
-		capabilities: ["content:read", "email:send", "network:request"],
+		capabilities: ["content:read", "content:write", "email:send", "network:request"],
 		allowedHosts: ["api.stripe.com", "api-m.paypal.com", "api-m.sandbox.paypal.com", "api.paymongo.com"],
 
 		storage: {
