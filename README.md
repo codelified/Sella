@@ -1,15 +1,30 @@
 # Sella
 
-Shopify-like commerce for [EmDash CMS](https://emdashcms.com) — as a native
-EmDash plugin. One package turns any Astro + EmDash site into a working store:
-products stay CMS content, while orders, coupons, reviews, customers, and
-inventory live in atomic plugin storage with a React admin, Stripe checkout,
-and agent-native MCP tools. MIT licensed, zero platform fee.
+Shopify-like commerce for [EmDash CMS](https://emdashcms.com). Products stay
+CMS content, while orders, coupons, reviews, customers and inventory live in
+atomic storage with a React admin, Stripe/PayPal/PayMongo checkout, and
+agent-native MCP tools. MIT licensed, zero platform fee.
 
 > **Status: Phases 1–9 complete and verified live** — adapters (Stripe,
 > PayPal, PayMongo, manual), atomic inventory, coupons engine, reviews,
 > customers, emails, React admin, storefront theme, one-command scaffolder.
 > See `docs/ROADMAP.md`.
+
+## Two ways to run it
+
+This package is the same commerce engine either way — only the packaging
+differs.
+
+| | **Sella distribution** | **EmDash plugin** |
+|---|---|---|
+| What | [`codelified/sella-standalone`](https://github.com/codelified/sella-standalone) | `@sella/core` in your own EmDash site |
+| Commerce | Built into the image, always on | Install and enable the plugin |
+| Install | `docker compose up -d --build` | `npm i @sella/core` + `plugins: [sella()]` |
+| You get | EmDash CMS + commerce + storefront, one command | Commerce on a site you already run |
+
+In the distribution, commerce is **core** — not something to enable. Here on
+the plugin side, it stays a plugin so it also works on self-hosted EmDash sites
+that want commerce without adopting the whole distribution.
 
 ## Why Sella?
 

@@ -7,6 +7,11 @@ storage with a React admin, Stripe + manual payments, and agent-callable routes.
 
 ## Install
 
+Prefer the whole thing? [`codelified/sella-standalone`](https://github.com/codelified/sella-standalone)
+ships EmDash CMS + this commerce engine + a storefront in one container, with
+commerce built in. Install the plugin directly only if you're running your own
+EmDash site.
+
 ```bash
 pnpm add @sella/core
 ```
@@ -15,10 +20,10 @@ pnpm add @sella/core
 // astro.config.mjs
 import { defineConfig } from "astro/config";
 import emdash from "emdash/astro";
-import { commerce } from "@sella/core";
+import { sella } from "@sella/core";
 
 export default defineConfig({
-	integrations: [emdash({ plugins: [commerce()] })],
+	integrations: [emdash({ plugins: [sella()] })],
 });
 ```
 
