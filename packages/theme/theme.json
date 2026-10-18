@@ -12,6 +12,8 @@
 		"src/components/",
 		"src/layouts/",
 		"src/styles/theme.css",
+		"public/fonts/",
+		"src/styles/fonts.css",
 		"public/cart.js",
 		"public/patterns/",
 		".env.example"

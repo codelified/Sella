@@ -1,7 +1,7 @@
 import node from "@astrojs/node";
 import react from "@astrojs/react";
 import icon from "astro-iconset";
-import { defineConfig, fontProviders } from "astro/config";
+import { defineConfig } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
 import { sella } from "@sella/core";
@@ -49,22 +49,6 @@ export default defineConfig({
 			}),
 			plugins: [sella()],
 		}),
-	],
-	fonts: [
-		{
-			provider: fontProviders.google(),
-			name: "Inter",
-			cssVariable: "--font-body",
-			weights: [400, 500, 600, 700, 800],
-			fallbacks: ["sans-serif"],
-		},
-		{
-			provider: fontProviders.google(),
-			name: "Fraunces",
-			cssVariable: "--font-display",
-			weights: [400, 500, 600, 700, 900],
-			fallbacks: ["Georgia", "serif"],
-		},
 	],
 	devToolbar: { enabled: false },
 });
