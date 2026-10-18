@@ -59,10 +59,10 @@ fixed in our own theme. The guide now ships a `mediaUrl()` helper.
 
 `emdash-cms/templates/starter` ships `/shop`, `/cart`, `/checkout` and
 `/thank-you`, plus its own product-card components. The proof overwrote four
-existing pages. So this run proves "replace an existing store", not "add a
+existing pages. So that run proved "replace an existing store", not "add a
 store to a content theme".
 
-A cleaner control is `blank` / `blog` / `portfolio`. **Still to do.**
+**Resolved by the `blog` control below.**
 
 ### 6. Seed schema is stricter than the admin (low)
 
@@ -92,7 +92,41 @@ themes don't link ULIDs.
 Not yet verified end-to-end: a **paid** order (needs live provider keys) and
 admin-side approval of a moderated review.
 
-## Next
+## Control run: the `blog` template (clean)
 
-Re-run on `blank` to remove the starter confound, and verify the order-happy
-path once a test-mode provider is configured.
+`starter` turned out to ship its own storefront, which confounded the first
+run. Re-ran on **`emdash-cms/templates` → `blog`**, a content theme with
+`/`, `/posts`, `/posts/[slug]`, `/category`, `/tag`, `/search`, `/rss.xml` and
+**no** `/shop`, `/cart`, `/checkout` or `/thank-you`.
+
+Procedure: add a `products` collection, install the plugin, wire
+`plugins: [sella()]`, drop in the five verified pages, build, run.
+
+Result — everything passes, and this time nothing was replaced:
+
+| Check | Result |
+|---|---|
+| Blog's own routes (`/`, `/posts`, `/search`) | 200, posts listed intact |
+| Added `/shop` | 200, lists `field-bottle` + `trail-cap` |
+| `/shop/[slug]` | 200 |
+| `/cart`, `/checkout`, `/thank-you` | 200 |
+| `reviews/summary` | `count: 0, average: 0` |
+| `reviews/submit` (rating 9) | `data.error.code = "BAD_RATING"` |
+| `reviews/submit` (valid) | `received: true, moderated: true` |
+| `config` probe | reachable, `checkoutReady: false` (no provider configured) |
+| Route collisions | none |
+
+Note: `blank` is unusable from the published tarball — it contains only
+dangling `CLAUDE.md` symlinks and no `src/`. `blog` is the usable control.
+
+## Verdict (final)
+
+The contract holds on a genuine content theme with no storefront to replace.
+Five pages and one collection turn a blog into a shop.
+
+## Still unverified
+
+A **paid** order end to end. Every payment path stops at
+`STRIPE_FAILED` / `PROVIDER_FAILED` without provider keys, so checkout
+completion, inventory decrement, order creation, email and thank-you polling
+remain untested against a live gateway.
