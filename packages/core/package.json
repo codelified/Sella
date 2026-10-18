@@ -1,7 +1,7 @@
 {
 	"name": "@sella/core",
 	"version": "0.2.0",
-	"description": "Shopify-like commerce for EmDash CMS — native plugin",
+	"description": "Shopify-like commerce for EmDash CMS \u2014 native plugin",
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"exports": {
@@ -11,11 +11,16 @@
 		},
 		"./admin": "./src/admin/index.tsx"
 	},
-	"files": ["dist", "src/admin", "README.md"],
+	"files": [
+		"dist",
+		"src/admin",
+		"README.md"
+	],
 	"scripts": {
 		"build": "tsdown src/index.ts --format esm --dts --clean",
 		"dev": "tsdown src/index.ts --format esm --dts --watch",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"prepare": "npm run build"
 	},
 	"peerDependencies": {
 		"emdash": "^1.0.1",
